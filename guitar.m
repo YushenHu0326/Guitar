@@ -1,12 +1,19 @@
+function guitar()
+
+function [x]=gdist(a,x)
+    k = 2*a/(1-a);
+    x = (1+k)*(x)./(1+k*abs(x));
+end
+
 clear all
 f1=440; % frequency in Hz (cycles/second)
 %string parameters to make frequency f1:
 L=1;
 M=1;
 T=M*(2*L*f1)^2;
-tau = 1.2; %decay time (seconds)
+tau=1.2; %decay time (seconds)
 %damping constant to make decay time tau:
-R= (2*M*L^2)/(tau*pi^2);
+R=(2*M*L^2)/(tau*pi^2);
 J=81;
 dx=L/(J-1);
 %maximum time step for numerical stability:
@@ -14,7 +21,7 @@ dtmax=-(R/T)+sqrt((R/T)^2+(dx^2/(T/M)));
 %Now set dt and nskip such that:
 %dt<=dtmax, nskip is a positive integer, and dt*nskip = 1/8192.
 %Also, make nskip as small as possible, given the above criteria.
-nskip = ceil(1/(8192*dtmax));
+nskip=ceil(1/(8192*dtmax));
 dt=1/(8192*nskip);
 tmax=4; %total time of the simulation in seconds
 clockmax=ceil(tmax/dt);
@@ -49,7 +56,11 @@ for clock=1:clockmax
     %drawnow %show latest frame
 end
 
+S=gdist(0.99,S);
+
 soundsc(S(1:count)) %play the recorded soundwave
 %plot the soundwave as a function of time:
-figure
-plot(tsave(1:count),S(1:count))
+%figure
+%plot(tsave(1:count),S(1:count))
+
+end
