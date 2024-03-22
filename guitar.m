@@ -5,6 +5,22 @@ function [x]=gdist(a,x)
     x = (1+k)*(x)./(1+k*abs(x));
 end
 
+function play(s,f)
+    fp(s)=ceil(fret(f)*J);
+    %initial conditions for plucked string:
+    xp=L*pickpos;
+    Hp=1; %position and amplitude of pluck
+
+    for jj=fp(s)+1:J
+        x=(jj-1)*dx;
+        if(x<xp)
+            H(s,jj)=Hp*x/xp;
+        else
+            H(s,jj)=Hp*(L-x)/(L-xp);
+        end
+    end
+end
+
 clear all
 
 %frequencies for all 6 strings
@@ -24,9 +40,11 @@ fret(17)=0.6254228395;   fret(18)=0.64644598765;
 fret(19)=0.66629012345;  fret(20)=0.68502006172;
 fret(21)=0.70269753086;  fret(22)=0.71938425925;
 fret(23)=0.73513425925;  fret(24)=0.75;
+%Currently pressed fret
+fp=zeros(1,6);
 
 %string parameters to make frequency f1:
-L=1;
+L=100;
 M=1;
 T=M*(2*L*f1)^2;
 tau=1.2; %decay time (seconds)
@@ -44,37 +62,30 @@ dt=1/(8192*nskip);
 tmax=10; %total time of the simulation in seconds
 clockmax=ceil(tmax/dt);
 
+i=1:6;
+H=zeros(6,J);
+V=zeros(6,J);
+
 %Initialize pickup position
 pickup = 0.9;
+pickpos = 0.9;
 
-%initial conditions for plucked string:
-V=zeros(1,J);
-xp=L*pickup;
-Hp=1; %position and amplitude of pluck
+play(1,5);
+%play(2,7);
+%play(3,7);
 
-for jj=1:J
-    x=(jj-1)*dx;
-    if(x<xp)
-        H(jj)=Hp*x/xp;
-    else
-        H(jj)=Hp*(L-x)/(L-xp);
-    end
-end
-
-%plot(H)
-
-drawnow
 count=0;
 S=zeros(1,ceil(clockmax/nskip));
 tsave=zeros(1,ceil(clockmax/nskip));
-j=2:(J-1); % list of indices of interior points
+
+j=fp(i)+2:(J-1); % list of indices of interior points
 for clock=1:clockmax
     t=clock*dt;
-    V(j)=V(j)+(dt/dx^2)*(T/M)*(H(j+1)-2*H(j)+H(j-1))+(dt/dx^2)*(R/M)*(V(j+1)-2*V(j)+V(j-1));
-    H(j)=H(j)+dt*V(j);
+    V(i,j)=V(i,j)+(dt/dx^2)*(T/M)*(H(i,j+1)-2*H(i,j)+H(i,j-1))+(dt/dx^2)*(R/M)*(V(i,j+1)-2*V(i,j)+V(i,j-1));
+    H(i,j)=H(i,j)+dt*V(i,j);
     if(mod(clock,nskip)==0)
         count=count+1;
-        S(count)=H(ceil(J*pickup)); %sample the sound
+        S(count)=H(1,ceil(J*pickup)); %sample the sound
         tsave(count)=t; %record sample time
     end
     %set(Hhandle,'ydata',H) %update movie frame
@@ -83,9 +94,9 @@ end
 
 S=gdist(0.99,S);
 
-soundsc(S(1:count)) %play the recorded soundwave
+soundsc(S(1:count))
 %plot the soundwave as a function of time:
 %figure
-%plot(tsave(1:count),S(1:count))
+%plot(tsave(1:count),S(1,1:count))
 
 end
