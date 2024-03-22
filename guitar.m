@@ -9,6 +9,7 @@
 % AH
 % PH
 % STOCHASTIC PROCESS
+% HUMBUCKER PICKUP
 
 function guitar()
 
