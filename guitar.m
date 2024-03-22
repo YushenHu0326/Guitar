@@ -20,8 +20,13 @@ function [x]=gdist(a,x)
 end
 
 function play_note(t,duration,s,f)
-    TIMESTAMP(s,ceil(t/2*(60/BPM)/dt))=f;
-    TIMESTAMP(s,ceil((t+duration)/2*60/BPM*dt))=-1;
+    if(f>0 && f<25)
+        TIMESTAMP(s,ceil(t/2*(60/BPM)/dt))=f;
+        TIMESTAMP(s,ceil((t+duration)/2*60/BPM*dt))=-1;
+    elseif(f==0)
+        TIMESTAMP(s,ceil(t/2*(60/BPM)/dt))=25;
+        TIMESTAMP(s,ceil((t+duration)/2*60/BPM*dt))=-1;
+    end
 end
 
 function play_chord(t,duration,s,f)
@@ -34,8 +39,32 @@ function play_chord(t,duration,s,f)
     end
 end
 
+function left_palm_mute(t,duration,s,f)
+    if(f>0 && f<25)
+        TIMESTAMP(s,ceil(t/2*(60/BPM)/dt))=f+60;
+        TIMESTAMP(s,ceil((t+duration)/2*60/BPM*dt))=-1;
+    elseif(f==0)
+        TIMESTAMP(s,ceil(t/2*(60/BPM)/dt))=85;
+        TIMESTAMP(s,ceil((t+duration)/2*60/BPM*dt))=-1;
+    end
+end
+
+function right_palm_mute(t,duration,s,f)
+    if(f>0 && f<25)
+        TIMESTAMP(s,ceil(t/2*(60/BPM)/dt))=f+30;
+        TIMESTAMP(s,ceil((t+duration)/2*60/BPM*dt))=-1;
+    elseif(f==0)
+        TIMESTAMP(s,ceil(t/2*(60/BPM)/dt))=55;
+        TIMESTAMP(s,ceil((t+duration)/2*60/BPM*dt))=-1;
+    end
+end
+
 function play(s,f)
-    fp(s)=ceil(fret(f)*J);
+    if(f==0)
+        fp(s)=0;
+    else
+        fp(s)=ceil(fret(f)*J);
+    end
     %initial conditions for plucked string:
     xp=L*pickpos;
     Hp=.2; %position and amplitude of pluck
@@ -54,6 +83,7 @@ end
 function release(s)
     fp(s)=0;
     H(s,:)=0;
+    R=R_init;
 end
 
 clear all
@@ -62,7 +92,8 @@ BPM=120;
 
 %frequencies for all 6 strings
 f=[82,110,147,196,247,330];
-f1=f(1); f2=f(2); f3=f(3); f4=f(4); f5=f(5); f6=f(6);
+%a copy of the initial frequencies
+f_init=f;
 %fret distance chart
 fret=zeros(1,24);
 fret(1)=0.056125;        fret(2)=0.10910185;
@@ -87,17 +118,24 @@ T=zeros(1,6);
 for ii=1:6
     T(ii)=M*(2*L*f(ii))^2;
 end
+
 tau=1.2; %decay time (seconds)
 %damping constant to make decay time tau:
-R=(2*M*L^2)/(tau*pi^2);
+R=zeros(1,6);
+for ii=1:6
+    R(ii)=(2*M*L^2)/(tau*pi^2);
+end
+%a copy of initial damping constant
+R_init=R;
+
 J=81;
 dx=L/(J-1);
 %maximum time step for numerical stability:
 %dtmax=zeros(1,6);
-dtmax=-(R/T(1))+sqrt((R/T(1))^2+(dx^2/(T(1)/M)));
+dtmax=-(R(1)/T(1))+sqrt((R(1)/T(1))^2+(dx^2/(T(1)/M)));
 for ii=1:6
     %dtmax(ii)=-(R/T(ii))+sqrt((R/T(ii))^2+(dx^2/(T(ii)/M)));
-    n_dtmax=-(R/T(ii))+sqrt((R/T(ii))^2+(dx^2/(T(ii)/M)));
+    n_dtmax=-(R(ii)/T(ii))+sqrt((R(ii)/T(ii))^2+(dx^2/(T(ii)/M)));
     if(n_dtmax<dtmax)
         dtmax=n_dtmax;
     end
@@ -112,8 +150,10 @@ clockmax=ceil(tmax/dt);
 
 % Action on Timstamp:
 % <= 24: Play note
-% 25: Release
-% 26: Mute
+% 25: Open note
+% -1: Release
+% note+30: Right palm mute
+% note+60: Left palm mute
 TIMESTAMP=zeros(6,clockmax);
 
 % When not 0, bend the string to the corresponding Hz
@@ -141,8 +181,9 @@ pickpos = 0.9;
 
 %A simple power chord to demonstrate chord, notice the order of the string
 %decides if downpicking or not
-play_chord(1,1,[1,2,3],[5,7,7]);
-
+%play_chord(1,1,[1,2,3],[5,7,7]);
+left_palm_mute(1,1,1,0);
+left_palm_mute(2,1,1,0);
 
 count=0;
 
@@ -153,8 +194,28 @@ for clock=1:clockmax
     t=clock*dt;
     for str=1:6
         if(TIMESTAMP(str,clock)>0)
+            %Play note
             if(TIMESTAMP(str,clock)<25)
                 play(str,TIMESTAMP(str,clock));
+            %Play open note
+            elseif(TIMESTAMP(str,clock)==25)
+                play(str,0);
+            %Play right palm mute
+            elseif(TIMESTAMP(str,clock)>30 && TIMESTAMP(str,clock)<55)
+                play(str,TIMESTAMP(str,clock)-20);
+                R(str)=(2*M*L^2)/(0.2*pi^2);
+            %Play right palm mute on open note
+            elseif(TIMESTAMP(str,clock)==55)
+                play(str,0);
+                R(str)=(2*M*L^2)/(0.2*pi^2);
+            %Play left palm mute
+            elseif(TIMESTAMP(str,clock)>60 && TIMESTAMP(str,clock)<85)
+                play(str,TIMESTAMP(str,clock)-20);
+                R(str)=(2*M*L^2)/(0.05*pi^2);
+            %Play left palm mute on open note
+            elseif(TIMESTAMP(str,clock)==85)
+                play(str,0);
+                R(str)=(2*M*L^2)/(0.05*pi^2);
             end
         elseif(TIMESTAMP(str,clock)<0)
             if(TIMESTAMP(str,clock)==1)
@@ -162,7 +223,7 @@ for clock=1:clockmax
             end
         end
         j=fp(str)+2:(J-1); % list of indices of interior points
-        V(str,j)=V(str,j)+(dt/dx^2)*(T(str)/M)*(H(str,j+1)-2*H(str,j)+H(str,j-1))+(dt/dx^2)*(R/M)*(V(str,j+1)-2*V(str,j)+V(str,j-1));
+        V(str,j)=V(str,j)+(dt/dx^2)*(T(str)/M)*(H(str,j+1)-2*H(str,j)+H(str,j-1))+(dt/dx^2)*(R(str)/M)*(V(str,j+1)-2*V(str,j)+V(str,j-1));
         H(str,j)=H(str,j)+dt*V(str,j);
     end
     if(mod(clock,nskip)==0)
