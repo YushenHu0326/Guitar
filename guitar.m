@@ -2,6 +2,7 @@
 % MAKE GUITAR SOUND
 % PLAY SINGLE NOTE
 % RELEASE & LET RING
+% BENDING
 % TEMPO SYSTEM
 % CHORD
 % PALM MUTE
@@ -18,11 +19,19 @@ function [x]=gdist(a,x)
     x = (1+k)*(x)./(1+k*abs(x));
 end
 
+function play_note(t,s,f)
+    TIMESTAMP(s,ceil(t*60/BPM/dt))=f;
+end
+
+function release_note(t,s)
+    TIMESTAMP(s,ceil(t*60/BPM*dt))=0;
+end
+
 function play(s,f)
     fp(s)=ceil(fret(f)*J);
     %initial conditions for plucked string:
     xp=L*pickpos;
-    Hp=1; %position and amplitude of pluck
+    Hp=.2; %position and amplitude of pluck
 
     for jj=fp(s)+1:J
         x=(jj-1)*dx;
@@ -34,7 +43,13 @@ function play(s,f)
     end
 end
 
+function release(s)
+    fp(s)=0;
+end
+
 clear all
+
+BPM=120;
 
 %frequencies for all 6 strings
 f=[82,110,147,196,247,330];
@@ -86,16 +101,28 @@ dt=1/(8192*nskip);
 tmax=10; %total time of the simulation in seconds
 clockmax=ceil(tmax/dt);
 
+% Action on Timstamp:
+% <= 24: Play note
+% 25: Release
+% 26: Mute
+TIMESTAMP=zeros(6,clockmax);
+
+% When not 0, bend the string to the corresponding Hz
+STRINGHz=zeros(6,clockmax);
+
 H=zeros(6,J);
 V=zeros(6,J);
 
 %Initialize pickup position
-pickup = 0.9;
+pickup = 0.81;
+pickup_2 = 0.82;
+pickup_3 = 0.87;
 pickpos = 0.9;
 
-play(1,5);
-play(2,7);
-play(3,7);
+play_note(1,3,12);
+play_note(2,5,15);
+play_note(3,4,14);
+play_note(4,4,12);
 
 count=0;
 
@@ -105,6 +132,11 @@ tsave=zeros(1,ceil(clockmax/nskip));
 for clock=1:clockmax
     t=clock*dt;
     for str=1:6
+        if(TIMESTAMP(str,clock)>0)
+            if(TIMESTAMP(str,clock)<25)
+                play(str,TIMESTAMP(str,clock));
+            end
+        end
         j=fp(str)+2:(J-1); % list of indices of interior points
         V(str,j)=V(str,j)+(dt/dx^2)*(T(str)/M)*(H(str,j+1)-2*H(str,j)+H(str,j-1))+(dt/dx^2)*(R/M)*(V(str,j+1)-2*V(str,j)+V(str,j-1));
         H(str,j)=H(str,j)+dt*V(str,j);
@@ -112,13 +144,13 @@ for clock=1:clockmax
     if(mod(clock,nskip)==0)
         count=count+1;
         S(count)=sum(H(:,ceil(J*pickup))); %sample the sound
+        S(count)=S(count)+sum(H(:,ceil(J*pickup_2))); %sample the sound
         tsave(count)=t; %record sample time
     end
     %set(Hhandle,'ydata',H) %update movie frame
     %drawnow %show latest frame
 end
 
-S=S/max(S);
 S=gdist(0.99,S);
 
 soundsc(S(1:count))
