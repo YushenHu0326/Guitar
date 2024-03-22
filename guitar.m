@@ -20,11 +20,11 @@ function [x]=gdist(a,x)
 end
 
 function play_note(t,s,f)
-    TIMESTAMP(s,ceil(t*60/BPM/dt))=f;
+    TIMESTAMP(s,ceil(t/2*(60/BPM)/dt))=f;
 end
 
 function release_note(t,s)
-    TIMESTAMP(s,ceil(t*60/BPM*dt))=0;
+    TIMESTAMP(s,ceil(t/2*60/BPM*dt))=-1;
 end
 
 function play(s,f)
@@ -34,9 +34,10 @@ function play(s,f)
     Hp=.2; %position and amplitude of pluck
 
     for jj=fp(s)+1:J
+        xpp=fp(s)*dx;
         x=(jj-1)*dx;
         if(x<xp)
-            H(s,jj)=Hp*x/xp;
+            H(s,jj)=Hp*(x-xpp)/(xp-xpp);
         else
             H(s,jj)=Hp*(L-x)/(L-xp);
         end
@@ -45,6 +46,7 @@ end
 
 function release(s)
     fp(s)=0;
+    H(s,:)=0;
 end
 
 clear all
@@ -120,9 +122,27 @@ pickup_3 = 0.87;
 pickpos = 0.9;
 
 play_note(1,3,12);
-%play_note(2,5,15);
-%play_note(3,4,14);
-%play_note(4,4,12);
+release_note(2,3);
+
+play_note(2,5,15);
+release_note(3,5);
+
+play_note(3,4,14);
+release_note(4,4);
+
+play_note(4,4,12);
+release_note(5,4);
+
+play_note(5,6,15);
+release_note(6,6);
+
+play_note(6,4,14);
+release_note(7,4);
+
+play_note(7,6,14);
+release_note(8,6);
+
+play_note(8,4,14);
 
 count=0;
 
@@ -135,6 +155,10 @@ for clock=1:clockmax
         if(TIMESTAMP(str,clock)>0)
             if(TIMESTAMP(str,clock)<25)
                 play(str,TIMESTAMP(str,clock));
+            end
+        elseif(TIMESTAMP(str,clock)<0)
+            if(TIMESTAMP(str,clock)==1)
+                release(str);
             end
         end
         j=fp(str)+2:(J-1); % list of indices of interior points
@@ -151,12 +175,11 @@ for clock=1:clockmax
     %drawnow %show latest frame
 end
 
-S=S/max(S);
 S=gdist(0.99,S);
 
-sound(S(1:count))
+soundsc(S(1:count))
 %plot the soundwave as a function of time:
 %figure
-plot(tsave(1:count),S(1,1:count))
+%plot(tsave(1:count),S(1,1:count))
 
 end
