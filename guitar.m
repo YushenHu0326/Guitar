@@ -120,9 +120,9 @@ pickup_3 = 0.87;
 pickpos = 0.9;
 
 play_note(1,3,12);
-play_note(2,5,15);
-play_note(3,4,14);
-play_note(4,4,12);
+%play_note(2,5,15);
+%play_note(3,4,14);
+%play_note(4,4,12);
 
 count=0;
 
@@ -151,11 +151,12 @@ for clock=1:clockmax
     %drawnow %show latest frame
 end
 
+S=S/max(S);
 S=gdist(0.99,S);
 
-soundsc(S(1:count))
+sound(S(1:count))
 %plot the soundwave as a function of time:
 %figure
-%plot(tsave(1:count),S(1,1:count))
+plot(tsave(1:count),S(1,1:count))
 
 end
