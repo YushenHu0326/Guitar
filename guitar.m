@@ -56,24 +56,22 @@ R=(2*M*L^2)/(tau*pi^2);
 J=81;
 dx=L/(J-1);
 %maximum time step for numerical stability:
-dtmax=zeros(1,6);
+%dtmax=zeros(1,6);
+dtmax=-(R/T(1))+sqrt((R/T(1))^2+(dx^2/(T(1)/M)));
 for ii=1:6
-    dtmax(ii)=-(R/T(ii))+sqrt((R/T(ii))^2+(dx^2/(T(ii)/M)));
+    %dtmax(ii)=-(R/T(ii))+sqrt((R/T(ii))^2+(dx^2/(T(ii)/M)));
+    n_dtmax=-(R/T(ii))+sqrt((R/T(ii))^2+(dx^2/(T(ii)/M)));
+    if(n_dtmax<dtmax)
+        dtmax=n_dtmax;
+    end
 end
 %Now set dt and nskip such that:
 %dt<=dtmax, nskip is a positive integer, and dt*nskip = 1/8192.
 %Also, make nskip as small as possible, given the above criteria.
-nskip=zeros(1,6);
-dt=zeros(1,6);
-for ii=1:6
-    nskip(ii)=ceil(1/(8192*dtmax(ii)));
-    dt(ii)=1/(8192*nskip(ii));
-end
+nskip=ceil(1/(8192*dtmax));
+dt=1/(8192*nskip);
 tmax=10; %total time of the simulation in seconds
-clockmax=zeros(1,6);
-for ii=1:6
-    clockmax(ii)=ceil(tmax/dt(ii));
-end
+clockmax=ceil(tmax/dt);
 
 H=zeros(6,J);
 V=zeros(6,J);
@@ -82,66 +80,35 @@ V=zeros(6,J);
 pickup = 0.9;
 pickpos = 0.9;
 
-play(1,2);
+play(1,5);
 play(2,7);
-%play(3,7);
+play(3,7);
 
-count=zeros(1,6);
+count=0;
 
-S1=zeros(1,ceil(clockmax(1)/nskip(1)));
-tsave1=zeros(1,ceil(clockmax(1)/nskip(1)));
+S=zeros(1,ceil(clockmax/nskip));
+tsave=zeros(1,ceil(clockmax/nskip));
 
-S2=zeros(1,ceil(clockmax(2)/nskip(2)));
-tsave2=zeros(1,ceil(clockmax(2)/nskip(2)));
-
-S3=zeros(1,ceil(clockmax(3)/nskip(3)));
-tsave3=zeros(1,ceil(clockmax(3)/nskip(3)));
-
-S4=zeros(1,ceil(clockmax(4)/nskip(4)));
-tsave4=zeros(1,ceil(clockmax(4)/nskip(4)));
-
-S5=zeros(1,ceil(clockmax(5)/nskip(5)));
-tsave5=zeros(1,ceil(clockmax(5)/nskip(5)));
-
-S6=zeros(1,ceil(clockmax(6)/nskip(6)));
-tsave6=zeros(1,ceil(clockmax(6)/nskip(6)));
-
-for str=1:6
-    j=fp(str)+2:(J-1); % list of indices of interior points
-    for clock=1:clockmax
-        t=clock*dt(str);
-        V(str,j)=V(str,j)+(dt(str)/dx^2)*(T(str)/M)*(H(str,j+1)-2*H(str,j)+H(str,j-1))+(dt(str)/dx^2)*(R/M)*(V(str,j+1)-2*V(str,j)+V(str,j-1));
-        H(str,j)=H(str,j)+dt(str)*V(str,j);
-        if(mod(clock,nskip(str))==0)
-            count(str)=count(str)+1;
-            if(str==1)
-                S1(count(str))=H(str,ceil(J*pickup)); %sample the sound
-                tsave1(count(str))=t; %record sample time
-            elseif(str==2)
-                S2(count(str))=H(str,ceil(J*pickup));
-                tsave2(count(str))=t;
-            elseif(str==3)
-                S3(count(str))=H(str,ceil(J*pickup));
-                tsave3(count(str))=t;
-            elseif(str==4)
-                S4(count(str))=H(str,ceil(J*pickup));
-                tsave4(count(str))=t;
-            elseif(str==5)
-                S5(count(str))=H(str,ceil(J*pickup));
-                tsave5(count(str))=t;
-            elseif(str==6)
-                S6(count(str))=H(str,ceil(J*pickup));
-                tsave6(count(str))=t;
-            end
-        end
-        %set(Hhandle,'ydata',H) %update movie frame
-        %drawnow %show latest frame
+for clock=1:clockmax
+    t=clock*dt;
+    for str=1:6
+        j=fp(str)+2:(J-1); % list of indices of interior points
+        V(str,j)=V(str,j)+(dt/dx^2)*(T(str)/M)*(H(str,j+1)-2*H(str,j)+H(str,j-1))+(dt/dx^2)*(R/M)*(V(str,j+1)-2*V(str,j)+V(str,j-1));
+        H(str,j)=H(str,j)+dt*V(str,j);
     end
+    if(mod(clock,nskip)==0)
+        count=count+1;
+        S(count)=sum(H(:,ceil(J*pickup))); %sample the sound
+        tsave(count)=t; %record sample time
+    end
+    %set(Hhandle,'ydata',H) %update movie frame
+    %drawnow %show latest frame
 end
 
-S1=gdist(0.99,S1);
+S=S/max(S);
+S=gdist(0.99,S);
 
-soundsc(S2(1:count))
+soundsc(S(1:count))
 %plot the soundwave as a function of time:
 %figure
 %plot(tsave(1:count),S(1,1:count))
