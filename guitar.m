@@ -19,12 +19,19 @@ function [x]=gdist(a,x)
     x = (1+k)*(x)./(1+k*abs(x));
 end
 
-function play_note(t,s,f)
+function play_note(t,duration,s,f)
     TIMESTAMP(s,ceil(t/2*(60/BPM)/dt))=f;
+    TIMESTAMP(s,ceil((t+duration)/2*60/BPM*dt))=-1;
 end
 
-function release_note(t,s)
-    TIMESTAMP(s,ceil(t/2*60/BPM*dt))=-1;
+function play_chord(t,duration,s,f)
+    interval=0;
+    for i=1:size(s,2)
+        TIMESTAMP(s(i),ceil((t+interval)/2*(60/BPM)/dt))=f(i);
+        TIMESTAMP(s(i),ceil((t+duration+interval)/2*60/BPM*dt))=-1;
+        interval=interval+0.1;
+        disp(i)
+    end
 end
 
 function play(s,f)
@@ -121,28 +128,21 @@ pickup_2 = 0.82;
 pickup_3 = 0.87;
 pickpos = 0.9;
 
-play_note(1,3,12);
-release_note(2,3);
 
-play_note(2,5,15);
-release_note(3,5);
+%Part of the main riff of Sweet Child O'Mine to demonstrate single note
+%play_note(1,1,3,12);
+%play_note(2,1,5,15);
+%play_note(3,1,4,14);
+%play_note(4,1,4,12);
+%play_note(5,1,6,15);
+%play_note(6,1,4,14);
+%play_note(7,1,6,14);
+%play_note(8,1,4,14);
 
-play_note(3,4,14);
-release_note(4,4);
+%A simple power chord to demonstrate chord, notice the order of the string
+%decides if downpicking or not
+play_chord(1,1,[1,2,3],[5,7,7]);
 
-play_note(4,4,12);
-release_note(5,4);
-
-play_note(5,6,15);
-release_note(6,6);
-
-play_note(6,4,14);
-release_note(7,4);
-
-play_note(7,6,14);
-release_note(8,6);
-
-play_note(8,4,14);
 
 count=0;
 
