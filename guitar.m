@@ -37,7 +37,6 @@ function play_chord(t,duration,s,f)
         TIMESTAMP(s(i),ceil((t+interval)/2*(60/BPM)/dt))=f(i);
         TIMESTAMP(s(i),ceil((t+duration+interval)/2*60/BPM*dt))=-1;
         interval=interval+0.1;
-        disp(i)
     end
 end
 
@@ -45,9 +44,17 @@ function left_palm_mute(t,duration,s,f)
     if(f>0 && f<25)
         TIMESTAMP(s,ceil(t/2*(60/BPM)/dt))=f+60;
         TIMESTAMP(s,ceil((t+duration)/2*60/BPM*dt))=-1;
-    elseif(f==0)
-        TIMESTAMP(s,ceil(t/2*(60/BPM)/dt))=85;
-        TIMESTAMP(s,ceil((t+duration)/2*60/BPM*dt))=-1;
+    end
+end
+
+function left_palm_mute_chord(t,duration,s,f)
+    interval=0;
+    for i=1:size(s,2)
+        if(f(i)>0 && f(i)<25)
+            TIMESTAMP(s(i),ceil((t+interval)/2*(60/BPM)/dt))=f(i)+60;
+            TIMESTAMP(s(i),ceil((t+duration+interval)/2*60/BPM*dt))=-1;
+            interval=interval+0.1;
+        end
     end
 end
 
@@ -172,20 +179,22 @@ pickpos = 0.9;
 
 
 %Part of the main riff of Sweet Child O'Mine to demonstrate single note
-%play_note(1,1,3,12);
-%play_note(2,1,5,15);
-%play_note(3,1,4,14);
-%play_note(4,1,4,12);
-%play_note(5,1,6,15);
-%play_note(6,1,4,14);
-%play_note(7,1,6,14);
-%play_note(8,1,4,14);
+play_note(1,1,3,12);
+play_note(2,1,5,15);
+play_note(3,1,4,14);
+play_note(4,1,4,12);
+play_note(5,1,6,15);
+play_note(6,1,4,14);
+play_note(7,1,6,14);
+play_note(8,1,4,14);
 
 %A simple power chord to demonstrate chord, notice the order of the string
 %decides if downpicking or not
 %play_chord(1,1,[1,2,3],[5,7,7]);
-left_palm_mute(1,1,1,0);
-left_palm_mute(2,1,1,0);
+%left_palm_mute_chord(1,1,[1,2,3],[5,7,7]);
+%left_palm_mute_chord(1.5,1,[1,2,3],[5,7,7]);
+%left_palm_mute_chord(2,1,[1,2,3],[5,7,7]);
+%left_palm_mute_chord(2.5,1,[1,2,3],[5,7,7]);
 
 count=0;
 
@@ -204,7 +213,7 @@ for clock=1:clockmax
                 play(str,0);
             %Play right palm mute
             elseif(TIMESTAMP(str,clock)>30 && TIMESTAMP(str,clock)<55)
-                play(str,TIMESTAMP(str,clock)-20);
+                play(str,TIMESTAMP(str,clock)-30);
                 R(str)=(2*M*L^2)/(0.2*pi^2);
             %Play right palm mute on open note
             elseif(TIMESTAMP(str,clock)==55)
@@ -212,12 +221,8 @@ for clock=1:clockmax
                 R(str)=(2*M*L^2)/(0.2*pi^2);
             %Play left palm mute
             elseif(TIMESTAMP(str,clock)>60 && TIMESTAMP(str,clock)<85)
-                play(str,TIMESTAMP(str,clock)-20);
-                R(str)=(2*M*L^2)/(0.05*pi^2);
-            %Play left palm mute on open note
-            elseif(TIMESTAMP(str,clock)==85)
-                play(str,0);
-                R(str)=(2*M*L^2)/(0.05*pi^2);
+                play(str,TIMESTAMP(str,clock)-60);
+                R(str)=(2*M*L^2)/(0.06*pi^2);
             end
         elseif(TIMESTAMP(str,clock)<0)
             if(TIMESTAMP(str,clock)==1)
