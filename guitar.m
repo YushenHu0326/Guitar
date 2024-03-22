@@ -1,3 +1,15 @@
+% TO DO LIST
+% MAKE GUITAR SOUND
+% PLAY SINGLE NOTE
+% RELEASE & LET RING
+% TEMPO SYSTEM
+% CHORD
+% PALM MUTE
+% HAMMER ON & PULL OFF
+% AH
+% PH
+% STOCHASTIC PROCESS
+
 function guitar()
 
 function [x]=gdist(a,x)
