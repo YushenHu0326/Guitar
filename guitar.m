@@ -2,7 +2,7 @@
 % MAKE GUITAR SOUND -check
 % PLAY SINGLE NOTE -check
 % RELEASE & LET RING -check
-% TREMOLO 
+% TREMOLO -check
 % BENDING -check
 % VIBRATO -check
 % TEMPO SYSTEM -check
@@ -34,15 +34,37 @@ function play_note(t,duration,s,f)
     end
 end
 
+function play_tremolo(t,duration,s,f)
+    if(f>0 && f<25)
+        TIMESTAMP(s,ceil(t/2*(60/BPM)/dt))=f;
+        TIMESTAMP(s,ceil((t+duration*0.25)/2*(60/BPM)/dt))=f;
+        TIMESTAMP(s,ceil((t+duration*0.5)/2*(60/BPM)/dt))=f;
+        TIMESTAMP(s,ceil((t+duration*0.75)/2*(60/BPM)/dt))=f;
+        TIMESTAMP(s,ceil((t+duration)/2*60/BPM*dt))=-1;
+    elseif(f==0)
+        TIMESTAMP(s,ceil(t/2*(60/BPM)/dt))=25;
+        TIMESTAMP(s,ceil((t+duration*0.25)/2*(60/BPM)/dt))=25;
+        TIMESTAMP(s,ceil((t+duration*0.5)/2*(60/BPM)/dt))=25;
+        TIMESTAMP(s,ceil((t+duration*0.75)/2*(60/BPM)/dt))=25;
+        TIMESTAMP(s,ceil((t+duration)/2*60/BPM*dt))=-1;
+    elseif(f==-1)
+        TIMESTAMP(s,ceil(t/2*(60/BPM)/dt))=60;
+        TIMESTAMP(s,ceil((t+duration*0.25)/2*(60/BPM)/dt))=60;
+        TIMESTAMP(s,ceil((t+duration*0.5)/2*(60/BPM)/dt))=60;
+        TIMESTAMP(s,ceil((t+duration*0.75)/2*(60/BPM)/dt))=60;
+        TIMESTAMP(s,ceil((t+duration)/2*60/BPM*dt))=-1;
+    end
+end
+
 function play_chord(t,duration,s,f)
     interval=0;
     for i=1:size(s,2)
         if(f(i)>0 && f(i)<25)
-            TIMESTAMP(s(i),ceil((t)/2*(60/BPM)/dt)+interval)=f(i);
+            TIMESTAMP(s(i),ceil(t/2*(60/BPM)/dt)+interval)=f(i);
             TIMESTAMP(s(i),ceil((t+duration(i))/2*(60/BPM)/dt))=-1;
             interval=interval+1;
         elseif(f(i)==-1)
-            TIMESTAMP(s(i),ceil((t)/2*(60/BPM)/dt)+interval)=60;
+            TIMESTAMP(s(i),ceil(t/2*(60/BPM)/dt)+interval)=60;
             TIMESTAMP(s(i),ceil((t+duration(i))/2*(60/BPM)/dt))=-1;
             interval=interval+1;
         end
@@ -86,7 +108,7 @@ function play_bend(t,duration,s,f,f1)
     end
 end
 
-function play_tremolo(t,duration,s,f)
+function play_vibrato(t,duration,s,f)
     if(f>0 && f<25)
         TIMESTAMP(s,ceil(t/2*(60/BPM)/dt))=f;
         TIMESTAMP(s,ceil((t+duration)/2*60/BPM*dt))=-1;
@@ -126,7 +148,7 @@ end
 
 clear all
 
-BPM=77;
+BPM=120;
 
 %frequencies for all 6 strings
 f=[82,110,147,196,247,330];
@@ -183,7 +205,7 @@ end
 %Also, make nskip as small as possible, given the above criteria.
 nskip=ceil(1/(8192*dtmax));
 dt=1/(8192*nskip);
-tmax=6; %total time of the simulation in seconds
+tmax=3; %total time of the simulation in seconds
 clockmax=ceil(tmax/dt);
 
 % Action on Timstamp:
@@ -226,24 +248,12 @@ neck_pickup=1;
 %play_chord(1,[4,4,4],[1,2,3],[-1,-1,-1]);
 
 %play_bend(1,1,3,12,14);
-%play_tremolo(1,1,3,12);
 
-%FREE BIRDDD YEEEAHHH
-play_note(1,0.5,6,15);
-play_note(1.5,0.5,5,15);
-play_bend(2,1,5,18,20);
-play_note(2.5,0.5,6,15);
-play_bend(3,1,5,18,20);
-play_bend(4,1,5,18,20);
-play_note(5,0.5,5,18);
-play_note(5.5,0.5,5,15);
-play_note(6,0.5,5,18);
-play_bend(6.5,0.5,5,18,20);
-play_note(7,0.5,5,18);
-play_note(7.5,0.5,5,15);
-play_bend(8,1,5,18,20);
-play_note(9,0.5,5,18);
-play_note(9.5,0.5,5,15);
+%double stop
+%play_note(1,1,6,12);
+%play_bend(1,1,5,15,17);
+
+%play_tremolo(1,1,6,12);
 
 count=0;
 
@@ -302,5 +312,5 @@ soundsc(S(1:count))
 %plot the soundwave as a function of time:
 %figure
 %plot(tsave(1:count),S(1,1:count))
-plot(STRINGT(5,:))
+
 end
