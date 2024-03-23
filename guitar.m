@@ -3,7 +3,7 @@
 % PLAY SINGLE NOTE -check
 % RELEASE & LET RING -check
 % TREMOLO
-% BENDING
+% BENDING -check
 % VIBRATO
 % TEMPO SYSTEM -check
 % CHORD -check
@@ -39,11 +39,11 @@ function play_chord(t,duration,s,f)
     for i=1:size(s,2)
         if(f(i)>0 && f(i)<25)
             TIMESTAMP(s(i),ceil((t)/2*(60/BPM)/dt)+interval)=f(i);
-            TIMESTAMP(s(i),ceil((t+duration)/2*(60/BPM)/dt))=-1;
+            TIMESTAMP(s(i),ceil((t+duration(i))/2*(60/BPM)/dt))=-1;
             interval=interval+1;
         elseif(f(i)==-1)
             TIMESTAMP(s(i),ceil((t)/2*(60/BPM)/dt)+interval)=60;
-            TIMESTAMP(s(i),ceil((t+duration)/2*(60/BPM)/dt))=-1;
+            TIMESTAMP(s(i),ceil((t+duration(i))/2*(60/BPM)/dt))=-1;
             interval=interval+1;
         end
     end
@@ -63,10 +63,35 @@ function play_bend(t,duration,s,f,f1)
     if(((f>0 && f<25) && (f1>0 && f1<25)) && f1>f)
         TIMESTAMP(s,ceil(t/2*(60/BPM)/dt))=f;
         TIMESTAMP(s,ceil((t+duration)/2*60/BPM*dt))=-1;
-        for i=ceil(t/2*(60/BPM)/dt):ceil((t+duration)/2*(60/BPM)/dt)
+        for i=ceil(t/2*(60/BPM)/dt):ceil((t+duration)*(60/BPM)/dt)
             if(s==1)
-                %STRINGT(i)=
+                df=5+f*0.5;
+            elseif(s==2)
+                df=6+f*0.6;
+            elseif(s==3)
+                df=10+f*0.8;
+            elseif(s==4)
+                df=12+f*1.15;
+            elseif(s==5)
+                df=15+f*1.45;
+            elseif(s==6)
+                df=20+f*2;
             end
+            tfactor=(i-ceil(t/2*(60/BPM)/dt))/(ceil((t+duration)/2*(60/BPM)/dt)-ceil(t/2*(60/BPM)/dt));
+            if(tfactor>1)
+                tfactor=1;
+            end
+            STRINGT(s,i)=tfactor*df*(f1-f);
+        end
+    end
+end
+
+function play_tremolo(t,duration,s,f)
+    if(f>0 && f<25)
+        TIMESTAMP(s,ceil(t/2*(60/BPM)/dt))=f;
+        TIMESTAMP(s,ceil((t+duration)/2*60/BPM*dt))=-1;
+        for i=ceil(t/2*(60/BPM)/dt):ceil((t+duration)*(60/BPM)/dt)
+            STRINGT(s,i)=sin((i-ceil(t/2*(60/BPM)/dt))/(ceil((t+duration)*(60/BPM)/dt)-ceil(t/2*(60/BPM)/dt))*20)*5;
         end
     end
 end
@@ -195,11 +220,11 @@ pickpos = 0.9;
 
 %A simple power chord to demonstrate chord, notice the order of the string
 %decides if downpicking or not
-%play_chord(1,1,[1,2,3],[5,7,7]);
-play_chord(1,4,[1,2,3],[-1,-1,-1]);
-%left_palm_mute_chord(2,1,[1,2,3],[5,7,7]);
-%play_chord(2,0.5,[1,2,3],[5,7,7]);
-%play_chord(2.5,0.5,[1,2,3],[5,7,7]);
+%play_chord(1,[1,1,1],[1,2,3],[5,7,7]);
+%play_chord(1,[4,4,4],[1,2,3],[-1,-1,-1]);
+
+%play_bend(1,1,3,12,14);
+play_tremolo(1,1,3,12);
 
 count=0;
 
@@ -233,6 +258,12 @@ for clock=1:clockmax
                 release(str);
             end
         end
+        if(STRINGT(str,clock)~=0)
+            T(str)=M*(2*L*(f_init(str)+STRINGT(str,clock)))^2;
+            if(clock<clockmax && STRINGT(str,clock+1)==0)
+                T(str)=M*(2*L*f_init(str))^2;
+            end
+        end
         j=fp(str)+2:(J-1); % list of indices of interior points
         V(str,j)=V(str,j)+(dt/dx^2)*(T(str)/M)*(H(str,j+1)-2*H(str,j)+H(str,j-1))+(dt/dx^2)*(R(str)/M)*(V(str,j+1)-2*V(str,j)+V(str,j-1));
         H(str,j)=H(str,j)+dt*V(str,j);
@@ -252,6 +283,6 @@ S=gdist(0.99,S);
 soundsc(S(1:count))
 %plot the soundwave as a function of time:
 %figure
-plot(tsave(1:count),S(1,1:count))
+%plot(tsave(1:count),S(1,1:count))
 
 end
