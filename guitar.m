@@ -2,9 +2,9 @@
 % MAKE GUITAR SOUND -check
 % PLAY SINGLE NOTE -check
 % RELEASE & LET RING -check
-% TREMOLO
+% TREMOLO 
 % BENDING -check
-% VIBRATO
+% VIBRATO -check
 % TEMPO SYSTEM -check
 % CHORD -check
 % PALM MUTE -check
@@ -63,7 +63,7 @@ function play_bend(t,duration,s,f,f1)
     if(((f>0 && f<25) && (f1>0 && f1<25)) && f1>f)
         TIMESTAMP(s,ceil(t/2*(60/BPM)/dt))=f;
         TIMESTAMP(s,ceil((t+duration)/2*60/BPM*dt))=-1;
-        for i=ceil(t/2*(60/BPM)/dt):ceil((t+duration)*(60/BPM)/dt)
+        for i=ceil(t/2*(60/BPM)/dt):ceil((t+duration)/2*(60/BPM)/dt)
             if(s==1)
                 df=5+f*0.5;
             elseif(s==2)
@@ -77,11 +77,11 @@ function play_bend(t,duration,s,f,f1)
             elseif(s==6)
                 df=20+f*2;
             end
-            tfactor=(i-ceil(t/2*(60/BPM)/dt))/(ceil((t+duration)/2*(60/BPM)/dt)-ceil(t/2*(60/BPM)/dt));
+            tfactor=(i-ceil(t/2*(60/BPM)/dt))*2/(ceil((t+duration)/2*(60/BPM)/dt)-ceil(t/2*(60/BPM)/dt));
             if(tfactor>1)
                 tfactor=1;
             end
-            STRINGT(s,i)=tfactor*df*(f1-f);
+            STRINGT(s,i)=tfactor*df*(f1-f)/4;
         end
     end
 end
@@ -90,7 +90,7 @@ function play_tremolo(t,duration,s,f)
     if(f>0 && f<25)
         TIMESTAMP(s,ceil(t/2*(60/BPM)/dt))=f;
         TIMESTAMP(s,ceil((t+duration)/2*60/BPM*dt))=-1;
-        for i=ceil(t/2*(60/BPM)/dt):ceil((t+duration)*(60/BPM)/dt)
+        for i=ceil(t/2*(60/BPM)/dt):ceil((t+duration)/2*(60/BPM)/dt)
             STRINGT(s,i)=sin((i-ceil(t/2*(60/BPM)/dt))/(ceil((t+duration)*(60/BPM)/dt)-ceil(t/2*(60/BPM)/dt))*20)*5;
         end
     end
@@ -126,7 +126,7 @@ end
 
 clear all
 
-BPM=120;
+BPM=77;
 
 %frequencies for all 6 strings
 f=[82,110,147,196,247,330];
@@ -183,7 +183,7 @@ end
 %Also, make nskip as small as possible, given the above criteria.
 nskip=ceil(1/(8192*dtmax));
 dt=1/(8192*nskip);
-tmax=3; %total time of the simulation in seconds
+tmax=6; %total time of the simulation in seconds
 clockmax=ceil(tmax/dt);
 
 % Action on Timstamp:
@@ -203,8 +203,10 @@ V=zeros(6,J);
 %Initialize pickup position
 pickup = 0.81;
 pickup_2 = 0.82;
-pickup_3 = 0.87;
+pickup_3 = 0.95;
 pickpos = 0.9;
+
+neck_pickup=1;
 
 %-1 denotes x on the tab
 
@@ -224,7 +226,24 @@ pickpos = 0.9;
 %play_chord(1,[4,4,4],[1,2,3],[-1,-1,-1]);
 
 %play_bend(1,1,3,12,14);
-play_tremolo(1,1,3,12);
+%play_tremolo(1,1,3,12);
+
+%FREE BIRDDD YEEEAHHH
+play_note(1,0.5,6,15);
+play_note(1.5,0.5,5,15);
+play_bend(2,1,5,18,20);
+play_note(2.5,0.5,6,15);
+play_bend(3,1,5,18,20);
+play_bend(4,1,5,18,20);
+play_note(5,0.5,5,18);
+play_note(5.5,0.5,5,15);
+play_note(6,0.5,5,18);
+play_bend(6.5,0.5,5,18,20);
+play_note(7,0.5,5,18);
+play_note(7.5,0.5,5,15);
+play_bend(8,1,5,18,20);
+play_note(9,0.5,5,18);
+play_note(9.5,0.5,5,15);
 
 count=0;
 
@@ -258,20 +277,19 @@ for clock=1:clockmax
                 release(str);
             end
         end
-        if(STRINGT(str,clock)~=0)
-            T(str)=M*(2*L*(f_init(str)+STRINGT(str,clock)))^2;
-            if(clock<clockmax && STRINGT(str,clock+1)==0)
-                T(str)=M*(2*L*f_init(str))^2;
-            end
-        end
+        T(str)=M*(2*L*(f_init(str)+STRINGT(str,clock)))^2;
         j=fp(str)+2:(J-1); % list of indices of interior points
         V(str,j)=V(str,j)+(dt/dx^2)*(T(str)/M)*(H(str,j+1)-2*H(str,j)+H(str,j-1))+(dt/dx^2)*(R(str)/M)*(V(str,j+1)-2*V(str,j)+V(str,j-1));
         H(str,j)=H(str,j)+dt*V(str,j);
     end
     if(mod(clock,nskip)==0)
         count=count+1;
-        S(count)=sum(H(:,ceil(J*pickup))); %sample the sound
-        S(count)=S(count)+sum(H(:,ceil(J*pickup_2))); %sample the sound
+        if(neck_pickup==1)
+            S(count)=sum(H(:,ceil(J*pickup))); %sample the sound
+            S(count)=S(count)+sum(H(:,ceil(J*pickup_2))); %sample the sound
+        else
+            S(count)=sum(H(:,ceil(J*pickup_3)));
+        end
         tsave(count)=t; %record sample time
     end
     %set(Hhandle,'ydata',H) %update movie frame
@@ -284,5 +302,5 @@ soundsc(S(1:count))
 %plot the soundwave as a function of time:
 %figure
 %plot(tsave(1:count),S(1,1:count))
-
+plot(STRINGT(5,:))
 end
