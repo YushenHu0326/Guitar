@@ -35,7 +35,7 @@ function play_chord(t,duration,s,f)
     interval=0;
     for i=1:size(s,2)
         TIMESTAMP(s(i),ceil((t+interval)/2*(60/BPM)/dt))=f(i);
-        TIMESTAMP(s(i),ceil((t+duration+interval)/2*60/BPM*dt))=-1;
+        TIMESTAMP(s(i),ceil((t+duration+interval)/2*(60/BPM)/dt))=-1;
         interval=interval+0.1;
     end
 end
@@ -43,7 +43,7 @@ end
 function left_palm_mute(t,duration,s,f)
     if(f>0 && f<25)
         TIMESTAMP(s,ceil(t/2*(60/BPM)/dt))=f+60;
-        TIMESTAMP(s,ceil((t+duration)/2*60/BPM*dt))=-1;
+        TIMESTAMP(s,ceil(t+duration)/2*(60/BPM)/dt)=-1;
     end
 end
 
@@ -52,7 +52,7 @@ function left_palm_mute_chord(t,duration,s,f)
     for i=1:size(s,2)
         if(f(i)>0 && f(i)<25)
             TIMESTAMP(s(i),ceil((t+interval)/2*(60/BPM)/dt))=f(i)+60;
-            TIMESTAMP(s(i),ceil((t+duration+interval)/2*60/BPM*dt))=-1;
+            TIMESTAMP(s(i),ceil(t+duration+interval)/2*(60/BPM)/dt)=-1;
             interval=interval+0.1;
         end
     end
@@ -65,6 +65,18 @@ function right_palm_mute(t,duration,s,f)
     elseif(f==0)
         TIMESTAMP(s,ceil(t/2*(60/BPM)/dt))=55;
         TIMESTAMP(s,ceil((t+duration)/2*60/BPM*dt))=-1;
+    end
+end
+
+function play_bend(t,duration,s,f,f1)
+    if(((f>0 && f<25) && (f1>0 && f1<25)) && f1>f)
+        TIMESTAMP(s,ceil(t/2*(60/BPM)/dt))=f;
+        TIMESTAMP(s,ceil((t+duration)/2*60/BPM*dt))=-1;
+        for i=ceil(t/2*(60/BPM)/dt):ceil((t+duration)/2*(60/BPM)/dt)
+            if(s==1)
+                %STRINGT(i)=
+            end
+        end
     end
 end
 
@@ -92,7 +104,7 @@ end
 function release(s)
     fp(s)=0;
     H(s,:)=0;
-    R=R_init;
+    V(s,:)=V(s,:)/8;
 end
 
 clear all
@@ -165,8 +177,8 @@ clockmax=ceil(tmax/dt);
 % note+60: Left palm mute
 TIMESTAMP=zeros(6,clockmax);
 
-% When not 0, bend the string to the corresponding Hz
-STRINGHz=zeros(6,clockmax);
+% When not 0, bend the string using the corresponding tension
+STRINGT=zeros(6,clockmax);
 
 H=zeros(6,J);
 V=zeros(6,J);
@@ -179,22 +191,22 @@ pickpos = 0.9;
 
 
 %Part of the main riff of Sweet Child O'Mine to demonstrate single note
-play_note(1,1,3,12);
-play_note(2,1,5,15);
-play_note(3,1,4,14);
-play_note(4,1,4,12);
-play_note(5,1,6,15);
-play_note(6,1,4,14);
-play_note(7,1,6,14);
-play_note(8,1,4,14);
+%play_note(1,1,3,12);
+%play_note(2,1,5,15);
+%play_note(3,1,4,14);
+%play_note(4,1,4,12);
+%play_note(5,1,6,15);
+%play_note(6,1,4,14);
+%play_note(7,1,6,14);
+%play_note(8,1,4,14);
 
 %A simple power chord to demonstrate chord, notice the order of the string
 %decides if downpicking or not
 %play_chord(1,1,[1,2,3],[5,7,7]);
-%left_palm_mute_chord(1,1,[1,2,3],[5,7,7]);
-%left_palm_mute_chord(1.5,1,[1,2,3],[5,7,7]);
-%left_palm_mute_chord(2,1,[1,2,3],[5,7,7]);
-%left_palm_mute_chord(2.5,1,[1,2,3],[5,7,7]);
+left_palm_mute_chord(1,0.5,[1,2,3],[5,7,7]);
+left_palm_mute_chord(1.5,0.5,[1,2,3],[5,7,7]);
+play_chord(2,0.5,[1,2,3],[5,7,7]);
+play_chord(2.5,0.5,[1,2,3],[5,7,7]);
 
 count=0;
 
@@ -225,8 +237,9 @@ for clock=1:clockmax
                 R(str)=(2*M*L^2)/(0.06*pi^2);
             end
         elseif(TIMESTAMP(str,clock)<0)
-            if(TIMESTAMP(str,clock)==1)
+            if(TIMESTAMP(str,clock)==-1)
                 release(str);
+                R(str)=R_init(str);
             end
         end
         j=fp(str)+2:(J-1); % list of indices of interior points
