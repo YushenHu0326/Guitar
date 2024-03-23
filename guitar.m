@@ -28,32 +28,23 @@ function play_note(t,duration,s,f)
     elseif(f==0)
         TIMESTAMP(s,ceil(t/2*(60/BPM)/dt))=25;
         TIMESTAMP(s,ceil((t+duration)/2*60/BPM*dt))=-1;
+    elseif(f==-1)
+        TIMESTAMP(s,ceil(t/2*(60/BPM)/dt))=60;
+        TIMESTAMP(s,ceil((t+duration)/2*60/BPM*dt))=-1;
     end
 end
 
 function play_chord(t,duration,s,f)
     interval=0;
     for i=1:size(s,2)
-        TIMESTAMP(s(i),ceil((t+interval)/2*(60/BPM)/dt))=f(i);
-        TIMESTAMP(s(i),ceil((t+duration+interval)/2*(60/BPM)/dt))=-1;
-        interval=interval+0.1;
-    end
-end
-
-function left_palm_mute(t,duration,s,f)
-    if(f>0 && f<25)
-        TIMESTAMP(s,ceil(t/2*(60/BPM)/dt))=f+60;
-        TIMESTAMP(s,ceil(t+duration)/2*(60/BPM)/dt)=-1;
-    end
-end
-
-function left_palm_mute_chord(t,duration,s,f)
-    interval=0;
-    for i=1:size(s,2)
         if(f(i)>0 && f(i)<25)
-            TIMESTAMP(s(i),ceil((t+interval)/2*(60/BPM)/dt))=f(i)+60;
-            TIMESTAMP(s(i),ceil(t+duration+interval)/2*(60/BPM)/dt)=-1;
-            interval=interval+0.1;
+            TIMESTAMP(s(i),ceil((t)/2*(60/BPM)/dt)+interval)=f(i);
+            TIMESTAMP(s(i),ceil((t+duration)/2*(60/BPM)/dt))=-1;
+            interval=interval+1;
+        elseif(f(i)==-1)
+            TIMESTAMP(s(i),ceil((t)/2*(60/BPM)/dt)+interval)=60;
+            TIMESTAMP(s(i),ceil((t+duration)/2*(60/BPM)/dt))=-1;
+            interval=interval+1;
         end
     end
 end
@@ -88,7 +79,7 @@ function play(s,f)
     end
     %initial conditions for plucked string:
     xp=L*pickpos;
-    Hp=.2; %position and amplitude of pluck
+    Hp=.1; %position and amplitude of pluck
 
     for jj=fp(s)+1:J
         xpp=fp(s)*dx;
@@ -104,7 +95,8 @@ end
 function release(s)
     fp(s)=0;
     H(s,:)=0;
-    V(s,:)=V(s,:)/8;
+    V(s,:)=V(s,:)/20;
+    R(s)=R_init(s);
 end
 
 clear all
@@ -166,7 +158,7 @@ end
 %Also, make nskip as small as possible, given the above criteria.
 nskip=ceil(1/(8192*dtmax));
 dt=1/(8192*nskip);
-tmax=10; %total time of the simulation in seconds
+tmax=3; %total time of the simulation in seconds
 clockmax=ceil(tmax/dt);
 
 % Action on Timstamp:
@@ -174,7 +166,7 @@ clockmax=ceil(tmax/dt);
 % 25: Open note
 % -1: Release
 % note+30: Right palm mute
-% note+60: Left palm mute
+% 60: Left palm mute
 TIMESTAMP=zeros(6,clockmax);
 
 % When not 0, bend the string using the corresponding tension
@@ -189,6 +181,7 @@ pickup_2 = 0.82;
 pickup_3 = 0.87;
 pickpos = 0.9;
 
+%-1 denotes x on the tab
 
 %Part of the main riff of Sweet Child O'Mine to demonstrate single note
 %play_note(1,1,3,12);
@@ -203,10 +196,10 @@ pickpos = 0.9;
 %A simple power chord to demonstrate chord, notice the order of the string
 %decides if downpicking or not
 %play_chord(1,1,[1,2,3],[5,7,7]);
-left_palm_mute_chord(1,0.5,[1,2,3],[5,7,7]);
-left_palm_mute_chord(1.5,0.5,[1,2,3],[5,7,7]);
-play_chord(2,0.5,[1,2,3],[5,7,7]);
-play_chord(2.5,0.5,[1,2,3],[5,7,7]);
+play_chord(1,4,[1,2,3],[-1,-1,-1]);
+%left_palm_mute_chord(2,1,[1,2,3],[5,7,7]);
+%play_chord(2,0.5,[1,2,3],[5,7,7]);
+%play_chord(2.5,0.5,[1,2,3],[5,7,7]);
 
 count=0;
 
@@ -226,20 +219,18 @@ for clock=1:clockmax
             %Play right palm mute
             elseif(TIMESTAMP(str,clock)>30 && TIMESTAMP(str,clock)<55)
                 play(str,TIMESTAMP(str,clock)-30);
-                R(str)=(2*M*L^2)/(0.2*pi^2);
             %Play right palm mute on open note
             elseif(TIMESTAMP(str,clock)==55)
                 play(str,0);
-                R(str)=(2*M*L^2)/(0.2*pi^2);
+                R(str)=(2*M*L^2)/(0.1*pi^2);
             %Play left palm mute
-            elseif(TIMESTAMP(str,clock)>60 && TIMESTAMP(str,clock)<85)
-                play(str,TIMESTAMP(str,clock)-60);
+            elseif(TIMESTAMP(str,clock)==60)
+                play(str,0);
                 R(str)=(2*M*L^2)/(0.06*pi^2);
             end
         elseif(TIMESTAMP(str,clock)<0)
             if(TIMESTAMP(str,clock)==-1)
                 release(str);
-                R(str)=R_init(str);
             end
         end
         j=fp(str)+2:(J-1); % list of indices of interior points
@@ -261,6 +252,6 @@ S=gdist(0.99,S);
 soundsc(S(1:count))
 %plot the soundwave as a function of time:
 %figure
-%plot(tsave(1:count),S(1,1:count))
+plot(tsave(1:count),S(1,1:count))
 
 end
