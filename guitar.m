@@ -29,7 +29,7 @@ function play_note(t,duration,s,f)
         TIMESTAMP(s,ceil(t/2*(60/BPM)/dt))=25;
         TIMESTAMP(s,ceil((t+duration)/2*60/BPM*dt))=-1;
     elseif(f==-1)
-        TIMESTAMP(s,ceil(t/2*(60/BPM)/dt))=60;
+        TIMESTAMP(s,ceil(t/2*(60/BPM)/dt))=59;
         TIMESTAMP(s,ceil((t+duration)/2*60/BPM*dt))=-1;
     end
 end
@@ -48,10 +48,10 @@ function play_tremolo(t,duration,s,f)
         TIMESTAMP(s,ceil((t+duration*0.75)/2*(60/BPM)/dt))=25;
         TIMESTAMP(s,ceil((t+duration)/2*60/BPM*dt))=-1;
     elseif(f==-1)
-        TIMESTAMP(s,ceil(t/2*(60/BPM)/dt))=60;
-        TIMESTAMP(s,ceil((t+duration*0.25)/2*(60/BPM)/dt))=60;
-        TIMESTAMP(s,ceil((t+duration*0.5)/2*(60/BPM)/dt))=60;
-        TIMESTAMP(s,ceil((t+duration*0.75)/2*(60/BPM)/dt))=60;
+        TIMESTAMP(s,ceil(t/2*(60/BPM)/dt))=59;
+        TIMESTAMP(s,ceil((t+duration*0.25)/2*(60/BPM)/dt))=59;
+        TIMESTAMP(s,ceil((t+duration*0.5)/2*(60/BPM)/dt))=59;
+        TIMESTAMP(s,ceil((t+duration*0.75)/2*(60/BPM)/dt))=59;
         TIMESTAMP(s,ceil((t+duration)/2*60/BPM*dt))=-1;
     end
 end
@@ -64,7 +64,7 @@ function play_chord(t,duration,s,f)
             TIMESTAMP(s(i),ceil((t+duration(i))/2*(60/BPM)/dt))=-1;
             interval=interval+1;
         elseif(f(i)==-1)
-            TIMESTAMP(s(i),ceil(t/2*(60/BPM)/dt)+interval)=60;
+            TIMESTAMP(s(i),ceil(t/2*(60/BPM)/dt)+interval)=59;
             TIMESTAMP(s(i),ceil((t+duration(i))/2*(60/BPM)/dt))=-1;
             interval=interval+1;
         end
@@ -118,12 +118,30 @@ function play_vibrato(t,duration,s,f)
     end
 end
 
+function play_hammeron(t,duration,s,f)
+    if(f>0 && f<25)
+        TIMESTAMP(s,ceil(t/2*(60/BPM)/dt))=f+60;
+        TIMESTAMP(s,ceil((t+duration)/2*60/BPM*dt))=-1;
+    end
+end
+
+function play_pulloff(t,duration,s,f)
+    if(f>0 && f<25)
+        TIMESTAMP(s,ceil(t/2*(60/BPM)/dt))=f+90;
+        TIMESTAMP(s,ceil((t+duration)/2*60/BPM*dt))=-1;
+    elseif(f==0)
+        TIMESTAMP(s,ceil(t/2*(60/BPM)/dt))=115;
+        TIMESTAMP(s,ceil((t+duration)/2*60/BPM*dt))=-1;
+    end
+end
+
 function play(s,f)
     if(f==0)
         fp(s)=0;
     else
         fp(s)=ceil(fret(f)*J);
     end
+    fp0(s)=f;
     %initial conditions for plucked string:
     xp=L*pickpos;
     Hp=.1; %position and amplitude of pluck
@@ -139,6 +157,46 @@ function play(s,f)
     end
 end
 
+function hammeron(s,f)
+    fp(s)=ceil(fret(f)*J);
+    fp0(s)=f;
+    %initial conditions for plucked string:
+    xp=L*fret(f);
+    Hp=.02; %position and amplitude of pluck
+
+    for jj=fp(s)+1:J
+        xpp=fp(s)*dx;
+        x=(jj-1)*dx;
+        if(x<xp)
+            H(s,jj)=H(s,jj)+Hp*(x-xpp)/(xp-xpp);
+        else
+            H(s,jj)=H(s,jj)+Hp*(L-x)/(L-xp);
+        end
+    end
+end
+
+function pulloff(s,f,f0)
+    if(f==0)
+        fp(s)=0;
+    else
+        fp(s)=ceil(fret(f)*J);
+    end
+    fp0(s)=f;
+    %initial conditions for plucked string:
+    xp=L*fret(f0);
+    Hp=.05; %position and amplitude of pluck
+
+    for jj=fp(s)+1:J
+        xpp=fp(s)*dx;
+        x=(jj-1)*dx;
+        if(x<xp)
+            H(s,jj)=H(s,jj)+Hp*(x-xpp)/(xp-xpp);
+        else
+            H(s,jj)=H(s,jj)+Hp*(L-x)/(L-xp);
+        end
+    end
+end
+
 function release(s)
     fp(s)=0;
     H(s,:)=0;
@@ -148,7 +206,7 @@ end
 
 clear all
 
-BPM=120;
+BPM=70;
 
 %frequencies for all 6 strings
 f=[82,110,147,196,247,330];
@@ -170,6 +228,7 @@ fret(21)=0.70269753086;  fret(22)=0.71938425925;
 fret(23)=0.73513425925;  fret(24)=0.75;
 %Currently pressed fret
 fp=zeros(1,6);
+fp0=zeros(1,6);
 
 %string parameters to make frequency f1:
 L=100;
@@ -179,7 +238,7 @@ for ii=1:6
     T(ii)=M*(2*L*f(ii))^2;
 end
 
-tau=1.2; %decay time (seconds)
+tau=1.5; %decay time (seconds)
 %damping constant to make decay time tau:
 R=zeros(1,6);
 for ii=1:6
@@ -213,7 +272,9 @@ clockmax=ceil(tmax/dt);
 % 25: Open note
 % -1: Release
 % note+30: Right palm mute
-% 60: Left palm mute
+% 59: Left palm mute
+% note+60: Hammer on
+% note+90: Pull off
 TIMESTAMP=zeros(6,clockmax);
 
 % When not 0, bend the string using the corresponding tension
@@ -244,8 +305,22 @@ neck_pickup=1;
 
 %A simple power chord to demonstrate chord, notice the order of the string
 %decides if downpicking or not
-%play_chord(1,[1,1,1],[1,2,3],[5,7,7]);
-%play_chord(1,[4,4,4],[1,2,3],[-1,-1,-1]);
+%play_chord(1,[2,2,2],[1,2,3],[5,7,7]);
+%play_note(3,1,1,-1);
+%play_note(4,1,1,-1);
+%play_note(4,1,1,-1);
+%play_note(5,1,1,-1);
+%play_note(6,1,1,-1);
+%play_note(7,1,1,-1);
+%play_note(8,1,1,-1);
+%play_chord(9,[2,2,2],[1,2,3],[7,9,9]);
+%play_note(11,1,1,-1);
+%play_note(12,1,1,-1);
+%play_note(13,1,1,-1);
+%play_note(14,1,1,-1);
+%play_note(15,1,1,-1);
+%play_note(16,1,1,-1);
+%play_note(17,1,1,-1);
 
 %play_bend(1,1,3,12,14);
 
@@ -253,7 +328,16 @@ neck_pickup=1;
 %play_note(1,1,6,12);
 %play_bend(1,1,5,15,17);
 
-%play_tremolo(1,1,6,12);
+play_tremolo(1,1,6,12);
+
+%A simple blue phrase to demonstrate hammer on and pull off
+%play_note(1,1,3,12);
+%play_hammeron(2,1,3,15);
+%play_pulloff(3,1,3,12);
+%play_hammeron(4,1,3,15);
+%play_bend(5,1,3,15,17);
+
+%play_AH(1,1,6,7);
 
 count=0;
 
@@ -278,9 +362,15 @@ for clock=1:clockmax
                 play(str,0);
                 R(str)=(2*M*L^2)/(0.1*pi^2);
             %Play left palm mute
-            elseif(TIMESTAMP(str,clock)==60)
+            elseif(TIMESTAMP(str,clock)==59)
                 play(str,0);
                 R(str)=(2*M*L^2)/(0.06*pi^2);
+            elseif(TIMESTAMP(str,clock)>59 && TIMESTAMP(str,clock)<85)
+                hammeron(str,TIMESTAMP(str,clock)-60);
+            elseif(TIMESTAMP(str,clock)>89 && TIMESTAMP(str,clock)<115)
+                pulloff(str,TIMESTAMP(str,clock)-90,fp0(str));
+            elseif(TIMESTAMP(str,clock)==115)
+                pulloff(str,0,fp0(str));
             end
         elseif(TIMESTAMP(str,clock)<0)
             if(TIMESTAMP(str,clock)==-1)
@@ -311,6 +401,6 @@ S=gdist(0.99,S);
 soundsc(S(1:count))
 %plot the soundwave as a function of time:
 %figure
-%plot(tsave(1:count),S(1,1:count))
+plot(tsave(1:count),S(1,1:count))
 
 end
