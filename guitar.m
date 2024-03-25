@@ -135,6 +135,16 @@ function play_pulloff(t,duration,s,f)
     end
 end
 
+function AH(t,duration,s,f)
+    if(f>0 && f<25)
+        TIMESTAMP(s,ceil(t/2*(60/BPM)/dt))=25;
+        TIMESTAMP(s,ceil((t+duration)/2*60/BPM*dt))=-1;
+        for i=ceil(t/2*(60/BPM)/dt):ceil(t/2*(60/BPM)/dt)+10
+            STRINGT(s,i)=f_init(s)/min(fret(f),1-fret(f));
+        end
+    end
+end
+
 function play(s,f)
     if(f==0)
         fp(s)=0;
@@ -328,7 +338,7 @@ neck_pickup=1;
 %play_note(1,1,6,12);
 %play_bend(1,1,5,15,17);
 
-play_tremolo(1,1,6,12);
+%play_tremolo(1,1,6,12);
 
 %A simple blue phrase to demonstrate hammer on and pull off
 %play_note(1,1,3,12);
@@ -337,7 +347,7 @@ play_tremolo(1,1,6,12);
 %play_hammeron(4,1,3,15);
 %play_bend(5,1,3,15,17);
 
-%play_AH(1,1,6,7);
+AH(1,1,6,7);
 
 count=0;
 
