@@ -139,8 +139,8 @@ function AH(t,duration,s,f)
     if(f>0 && f<25)
         TIMESTAMP(s,ceil(t/2*(60/BPM)/dt))=25;
         TIMESTAMP(s,ceil((t+duration)/2*60/BPM*dt))=-1;
-        for i=ceil(t/2*(60/BPM)/dt):ceil(t/2*(60/BPM)/dt)+10
-            STRINGT(s,i)=f_init(s)/min(fret(f),1-fret(f));
+        for i=ceil(t/2*(60/BPM)/dt):ceil((t+duration)/2*(60/BPM)/dt)
+            STRINGT(s,i)=f_init(s)/min(fret(f),1-fret(f))-f_init(s);
         end
     end
 end
@@ -347,7 +347,7 @@ neck_pickup=1;
 %play_hammeron(4,1,3,15);
 %play_bend(5,1,3,15,17);
 
-AH(1,1,6,7);
+%AH(1,1,6,12);
 
 count=0;
 
@@ -411,6 +411,7 @@ S=gdist(0.99,S);
 soundsc(S(1:count))
 %plot the soundwave as a function of time:
 %figure
-plot(tsave(1:count),S(1,1:count))
+%plot(tsave(1:count),S(1,1:count))
+%plot(STRINGT(6,:))
 
 end
