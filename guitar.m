@@ -354,7 +354,7 @@ Hp=0.1;
 %play_hammeron(4,1,3,15);
 %play_bend(5,1,3,15,17);
 
-%AH(1,1,6,12);
+AH(1,1,6,12);
 
 count=0;
 
@@ -403,7 +403,7 @@ for clock=1:clockmax
         H(str,j)=H(str,j)+dt*V(str,j);
         if(t>=lastHarmonicT(str))
             for n=1:3
-                H(str,j)=H(str,j)-(2*Hp*L*L*sin(xp*n*pi/L))/(xp*(L-xp)*n*n*pi*pi)*sin(n*j/J*pi)*cos(n*pi*t*f_init(str)/L);
+                H(str,j)=H(str,j)-(2*Hp*L*L*sin(xp*n*pi/L))/(xp*(L-xp)*n*n*pi*pi)*sin(n*j/J*pi)*cos(n*pi*(t-lastHarmonicT(str))*T(str)/L);
             end
         end
     end
