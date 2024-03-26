@@ -81,10 +81,8 @@ function right_palm_mute(t,duration,s,f)
     end
 end
 
-function play_bend(t,duration,s,f,f1)
+function bend(t,duration,s,f,f1)
     if(((f>0 && f<25) && (f1>0 && f1<25)) && f1>f)
-        TIMESTAMP(s,ceil(t/2*(60/BPM)/dt))=f;
-        TIMESTAMP(s,ceil((t+duration)/2*60/BPM/dt)-2)=-1;
         for i=ceil(t/2*(60/BPM)/dt):ceil((t+duration)/2*(60/BPM)/dt)
             if(s==1)
                 df=5+f*0.5;
@@ -108,10 +106,8 @@ function play_bend(t,duration,s,f,f1)
     end
 end
 
-function play_vibrato(t,duration,s,f)
+function vibrato(t,duration,s,f)
     if(f>0 && f<25)
-        TIMESTAMP(s,ceil(t/2*(60/BPM)/dt))=f;
-        TIMESTAMP(s,ceil((t+duration)/2*60/BPM/dt)-2)=-1;
         for i=ceil(t/2*(60/BPM)/dt):ceil((t+duration)/2*(60/BPM)/dt)
             STRINGT(s,i)=abs(sin((i-ceil(t/2*(60/BPM)/dt))/(ceil((t+duration)*(60/BPM)/dt)-ceil(t/2*(60/BPM)/dt))*20)*5);
         end
@@ -345,11 +341,10 @@ end
 
 %play_chord(1,[2,2,2],[1,2,3],[-1,-1,-1]);
 
-%play_bend(1,1,3,12,14);
-
 %double stop
 %play_note(1,1,6,12);
-%play_bend(1,1,5,15,17);
+%play_note(1,1,5,15);
+%bend(1,1,5,15,17);
 
 %play_tremolo(1,1,6,12);
 %play_vibrato(1,1,6,12);
@@ -359,10 +354,11 @@ end
 %play_hammeron(2,1,3,15);
 %play_pulloff(3,1,3,12);
 %play_hammeron(4,1,3,15);
-%play_bend(5,1,3,15,17);
+%play_note(5,1,3,15);
+%bend(5,1,3,15,17);
 
 %AH(1,4,6,7);
-PH(1,1,3,4);
+%PH(1,1,3,4);
 
 count=0;
 
