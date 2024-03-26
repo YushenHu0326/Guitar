@@ -21,40 +21,6 @@ function [x]=gdist(a,x)
     x = (1+k)*(x)./(1+k*abs(x));
 end
 
-function wah(audio_in, fs)
-    damping = 0.05;
-    width = 1000;
-    min_cutoff = 250;
-    max_cutoff = 5000;
-    center_freq = width/fs;
-    cutoff_freq=min_cutoff:center_freq:max_cutoff;
-    while(length(cutoff_freq) < length(audio_in) )
-        cutoff_freq = [ cutoff_freq (max_cutoff:-center_freq:min_cutoff) ];
-        cutoff_freq = [ cutoff_freq (min_cutoff:center_freq:max_cutoff) ];
-    end
-    cutoff_freq = cutoff_freq(1:length(audio_in));
-    % control the center frequency
-    F1 = 2*sin((pi*cutoff_freq(1))/fs);
-    Q1 = 2*damping;
-    % Create and Zero Vectors to Match Length of Audio Input File
-    highpass=zeros(size(audio_in));
-    bandpass=zeros(size(audio_in));
-    lowpass=zeros(size(audio_in));
-    highpass(1) = audio_in(1);
-    bandpass(1) = F1*highpass(1);
-    lowpass(1) = F1*bandpass(1);
-    for n=2:length(audio_in)
-        highpass(n) = audio_in(n) - lowpass(n-1) - Q1*bandpass(n-1);
-        bandpass(n) = F1*highpass(n) + bandpass(n-1);
-        lowpass(n) = F1*bandpass(n) + lowpass(n-1);
-        F1 = 2*sin((pi*cutoff_freq(n))/fs);
-    end
-    % Normalize and play back
-    normed = bandpass./max(max(abs(bandpass)));
-    audiowrite('wah wahed.wav', normed, fs);
-    sound (normed, fs);
-end
-
 function play_note(t,duration,s,f)
     if(f>0 && f<25)
         TIMESTAMP(s,ceil(t/2*(60/BPM)/dt))=f;
@@ -147,7 +113,7 @@ function play_vibrato(t,duration,s,f)
         TIMESTAMP(s,ceil(t/2*(60/BPM)/dt))=f;
         TIMESTAMP(s,ceil((t+duration)/2*60/BPM/dt)-2)=-1;
         for i=ceil(t/2*(60/BPM)/dt):ceil((t+duration)/2*(60/BPM)/dt)
-            STRINGT(s,i)=sin((i-ceil(t/2*(60/BPM)/dt))/(ceil((t+duration)*(60/BPM)/dt)-ceil(t/2*(60/BPM)/dt))*20)*5;
+            STRINGT(s,i)=abs(sin((i-ceil(t/2*(60/BPM)/dt))/(ceil((t+duration)*(60/BPM)/dt)-ceil(t/2*(60/BPM)/dt))*20)*5);
         end
     end
 end
@@ -171,7 +137,21 @@ end
 
 function AH(t,duration,s,f)
     if(f>0 && f<25)
-        TIMESTAMP(s,ceil(t/2*(60/BPM)/dt))=-s-10;
+        TIMESTAMP(s,ceil(t/2*(60/BPM)/dt))=25;
+        TIMESTAMP(s,ceil((t+duration)/2*60/BPM/dt)-2)=-1;
+        for i=ceil(t/2*(60/BPM)/dt):ceil((t+duration)/2*(60/BPM)/dt)
+            HARMONICP(s,i)=f;
+        end
+    end
+end
+
+function PH(t,duration,s,f)
+    if(f>0 && f<25)
+        TIMESTAMP(s,ceil(t/2*(60/BPM)/dt))=f;
+        TIMESTAMP(s,ceil((t+duration)/2*60/BPM/dt)-2)=-1;
+        for i=ceil(t/2*(60/BPM)/dt):ceil((t+duration)/2*(60/BPM)/dt)
+            HARMONICP(s,i)=25;
+        end
     end
 end
 
@@ -240,16 +220,23 @@ end
 function release(s)
     fp(s)=0;
     Hp(s)=0.0002;
+    tau(s)=1.5;
 end
 
 BPM=120;
+
+%Initialize pickup position
+pickup = 0.81;
+pickup_2 = 0.82;
+pickup_3 = 0.95;
+pickpos = 0.9;
 
 %frequencies for all 6 strings
 f=[82,110,147,196,247,330];
 %a copy of the initial frequencies
 f_init=f;
 %fret distance chart
-fret=zeros(1,24);
+fret=zeros(1,25);
 fret(1)=0.056125;        fret(2)=0.10910185;
 fret(3)=0.1591034;       fret(4)=0.20629938;
 fret(5)=0.25084722;      fret(6)=0.29289352;
@@ -262,6 +249,7 @@ fret(17)=0.6254228395;   fret(18)=0.64644598765;
 fret(19)=0.66629012345;  fret(20)=0.68502006172;
 fret(21)=0.70269753086;  fret(22)=0.71938425925;
 fret(23)=0.73513425925;  fret(24)=0.75;
+fret(25)=pickpos;
 %Currently pressed fret
 fp=zeros(1,6);
 fp0=zeros(1,6);
@@ -274,9 +262,12 @@ for ii=1:6
     T(ii)=M*(2*L*f(ii))^2;
 end
 
-tau=1.5; %decay time (seconds)
+tau=zeros(1,6); %decay time (seconds)
+for ii=1:6
+    tau(ii)=2;
+end
 %damping constant to make decay time tau:
-R=(2*M*L^2)/(tau*pi^2);
+R=(2*M*L^2)/(tau(1)*pi^2);
 
 J=81;
 dx=L/(J-1);
@@ -311,18 +302,15 @@ TIMESTAMP=zeros(6,clockmax);
 % When not 0, bend the string using the corresponding tension
 STRINGT=zeros(6,clockmax);
 
+% When not 0, slightly touch the string to make harmonics
+HARMONICP=zeros(6,clockmax);
+
 lastPluckT=zeros(1,6);
 for ii=1:6
     lastPluckT(ii)=tmax+1;
 end
 
 H=zeros(6,J);
-
-%Initialize pickup position
-pickup = 0.81;
-pickup_2 = 0.82;
-pickup_3 = 0.95;
-pickpos = 0.9;
 
 neck_pickup=1;
 
@@ -347,22 +335,15 @@ end
 
 %A simple power chord to demonstrate chord, notice the order of the string
 %decides if downpicking or not
-play_chord(1,[2,2,2],[1,2,3],[5,7,7]);
-%play_note(3,1,1,-1);
-%play_note(4,1,1,-1);
-%play_note(4,1,1,-1);
-%play_note(5,1,1,-1);
-%play_note(6,1,1,-1);
-%play_note(7,1,1,-1);
-%play_note(8,1,1,-1);
-%play_chord(9,[2,2,2],[1,2,3],[7,9,9]);
-%play_note(11,1,1,-1);
-%play_note(12,1,1,-1);
-%play_note(13,1,1,-1);
-%play_note(14,1,1,-1);
-%play_note(15,1,1,-1);
-%play_note(16,1,1,-1);
-%play_note(17,1,1,-1);
+%play_chord(1,[2,2,2],[1,2,3],[5,7,7]);
+%right_palm_mute(3,1,1,5);
+%right_palm_mute(4,1,1,5);
+%right_palm_mute(5,1,1,5);
+%right_palm_mute(6,1,1,5);
+%right_palm_mute(7,1,1,5);
+%right_palm_mute(8,1,1,5);
+
+%play_chord(1,[2,2,2],[1,2,3],[-1,-1,-1]);
 
 %play_bend(1,1,3,12,14);
 
@@ -371,6 +352,7 @@ play_chord(1,[2,2,2],[1,2,3],[5,7,7]);
 %play_bend(1,1,5,15,17);
 
 %play_tremolo(1,1,6,12);
+%play_vibrato(1,1,6,12);
 
 %A simple blue phrase to demonstrate hammer on and pull off
 %play_note(1,1,3,12);
@@ -379,7 +361,8 @@ play_chord(1,[2,2,2],[1,2,3],[5,7,7]);
 %play_hammeron(4,1,3,15);
 %play_bend(5,1,3,15,17);
 
-%AH(1,1,1,5);
+%AH(1,4,6,7);
+PH(1,2,3,4);
 
 count=0;
 
@@ -402,14 +385,17 @@ for clock=1:clockmax
             elseif(TIMESTAMP(str,clock)>30 && TIMESTAMP(str,clock)<55)
                 play(str,TIMESTAMP(str,clock)-30);
                 lastPluckT(str)=t;
+                tau(str)=0.5;
             %Play right palm mute on open note
             elseif(TIMESTAMP(str,clock)==55)
                 play(str,0);
                 lastPluckT(str)=t;
+                tau(str)=0.5;
             %Play left palm mute
             elseif(TIMESTAMP(str,clock)==59)
                 play(str,0);
                 lastPluckT(str)=t;
+                tau(str)=0.1;
             elseif(TIMESTAMP(str,clock)>59 && TIMESTAMP(str,clock)<85)
                 hammeron(str,TIMESTAMP(str,clock)-60);
                 lastPluckT(str)=t;
@@ -433,10 +419,15 @@ for clock=1:clockmax
         j=fp(str)+2:(J-1); % list of indices of interior points
         H(str,j)=0;
         if(t>=lastPluckT(str))
-            for n=1:10
-                H(str,j)=H(str,j)+(2*Hp(str)*(L-L*fp(str)/J)^2*sin(xp(str)*n*pi/(L-L*fp(str)/J)))/(xp(str)*(L-L*fp(str)/J-xp(str))*n*n*pi*pi)*sin(n*j/J*pi)*cos(n*pi*(t-lastPluckT(str))*sqrt(T(str)/M)/(L-L*fp(str)/J));
+            if(HARMONICP(str,clock)~=0)
+                incr=round(1/fret(HARMONICP(str,clock)));
+            else
+                incr=1;
             end
-            H(str,j)=H(str,j)*max([1-(t-lastPluckT(str))/tau,0])^2;
+            for n=1:10
+                H(str,j)=H(str,j)+(2*Hp(str)*(L-L*fp(str)/J)^2*sin(xp(str)*n*incr*pi/(L-L*fp(str)/J)))/(xp(str)*(L-L*fp(str)/J-xp(str))*n*incr*n*incr*pi*pi)*sin(n*incr*j/J*pi)*cos(n*incr*pi*(t-lastPluckT(str))*sqrt(T(str)/M)/(L-L*fp(str)/J));
+            end
+            H(str,j)=H(str,j)*max([1-(t-lastPluckT(str))/tau(str),0])^2;
         end
     end
     if(mod(clock,nskip)==0)
