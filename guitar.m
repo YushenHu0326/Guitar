@@ -34,42 +34,6 @@ function play_note(t,duration,s,f)
     end
 end
 
-function wahwah(audio)
-    % Input: audio file
-    [ audio_in, fs] = audioread(audio);
-    damping = input(0.05);
-    width = input(1000);
-    min_cutoff = input(250);
-    max_cutoff = input(5000);
-    center_freq = width/fs;
-    cutoff_freq=min_cutoff:center_freq:max_cutoff;
-    while(length(cutoff_freq) < length(audio_in) )
-        cutoff_freq = [ cutoff_freq (max_cutoff:-center_freq:min_cutoff) ];
-        cutoff_freq = [ cutoff_freq (min_cutoff:center_freq:max_cutoff) ];
-    end
-    cutoff_freq = cutoff_freq(1:length(audio_in));
-    % control the center frequency
-    F1 = 2*sin((pi*cutoff_freq(1))/fs);
-    Q1 = 2*damping;
-    % Create and Zero Vectors to Match Length of Audio Input File
-    highpass=zeros(size(audio_in));
-    bandpass=zeros(size(audio_in));
-    lowpass=zeros(size(audio_in));
-    highpass(1) = audio_in(1);
-    bandpass(1) = F1*highpass(1);
-    lowpass(1) = F1*bandpass(1);
-    for n=2:length(audio_in)
-        highpass(n) = audio_in(n) - lowpass(n-1) - Q1*bandpass(n-1);
-        bandpass(n) = F1*highpass(n) + bandpass(n-1);
-        lowpass(n) = F1*bandpass(n) + lowpass(n-1);
-        F1 = 2*sin((pi*cutoff_freq(n))/fs);
-    end
-    % Normalize and play back
-    normed = bandpass./max(max(abs(bandpass)));
-    audiowrite('wah wahed.wav', normed, fs);
-    sound (normed, fs);
-end
-
 function play_tremolo(t,duration,s,f)
     if(f>0 && f<25)
         TIMESTAMP(s,ceil(t/2*(60/BPM)/dt))=f;
@@ -185,16 +149,16 @@ function play(s,f)
     end
     fp0(s)=f;
     %initial conditions for plucked string:
-    xp=L*pickpos;
-    Hp=.1; %position and amplitude of pluck
+    xp(s)=L*pickpos;
+    Hp(s)=.1; %position and amplitude of pluck
 
     for jj=fp(s)+1:J
         xpp=fp(s)*dx;
         x=(jj-1)*dx;
-        if(x<xp)
-            H(s,jj)=Hp*(x-xpp)/(xp-xpp);
+        if(x<xp(s))
+            H(s,jj)=Hp(s)*(x-xpp)/(xp(s)-xpp);
         else
-            H(s,jj)=Hp*(L-x)/(L-xp);
+            H(s,jj)=Hp(s)*(L-x)/(L-xp(s));
         end
     end
 end
@@ -203,16 +167,16 @@ function hammeron(s,f)
     fp(s)=ceil(fret(f)*J);
     fp0(s)=f;
     %initial conditions for plucked string:
-    xp=L*fret(f);
-    Hp=.02; %position and amplitude of pluck
+    xp(s)=L*fret(f);
+    Hp(s)=.02; %position and amplitude of pluck
 
     for jj=fp(s)+1:J
         xpp=fp(s)*dx;
         x=(jj-1)*dx;
-        if(x<xp)
-            H(s,jj)=H(s,jj)+Hp*(x-xpp)/(xp-xpp);
+        if(x<xp(s))
+            H(s,jj)=H(s,jj)+Hp(s)*(x-xpp)/(xp(s)-xpp);
         else
-            H(s,jj)=H(s,jj)+Hp*(L-x)/(L-xp);
+            H(s,jj)=H(s,jj)+Hp(s)*(L-x)/(L-xp(s));
         end
     end
 end
@@ -225,22 +189,23 @@ function pulloff(s,f,f0)
     end
     fp0(s)=f;
     %initial conditions for plucked string:
-    xp=L*fret(f0);
-    Hp=.05; %position and amplitude of pluck
+    xp(s)=L*fret(f0);
+    Hp(s)=.05; %position and amplitude of pluck
 
     for jj=fp(s)+1:J
         xpp=fp(s)*dx;
         x=(jj-1)*dx;
-        if(x<xp)
-            H(s,jj)=H(s,jj)+Hp*(x-xpp)/(xp-xpp);
+        if(x<xp(s))
+            H(s,jj)=H(s,jj)+Hp(s)*(x-xpp)/(xp(s)-xpp);
         else
-            H(s,jj)=H(s,jj)+Hp*(L-x)/(L-xp);
+            H(s,jj)=H(s,jj)+Hp(s)*(L-x)/(L-xp(s));
         end
     end
 end
 
 function release(s)
     fp(s)=0;
+    Hp(s)=0.0002;
 end
 
 BPM=120;
@@ -327,24 +292,28 @@ pickpos = 0.9;
 
 neck_pickup=1;
 
-xp=L*pickpos;
-Hp=0.1;
+xp=zeros(1,6);
+Hp=zeros(1,6);
+for ii=1:6
+    xp(ii)=L*pickpos;
+    Hp(ii)=0.1;
+end
 
 %-1 denotes x on the tab
 
 %Part of the main riff of Sweet Child O'Mine to demonstrate single note
-play_note(1,1,3,12);
-play_note(2,1,5,15);
-play_note(3,1,4,14);
-play_note(4,1,4,12);
-play_note(5,1,6,15);
-play_note(6,1,4,14);
-play_note(7,1,6,14);
-play_note(8,1,4,14);
+%play_note(1,1,3,12);
+%play_note(2,1,5,15);
+%play_note(3,1,4,14);
+%play_note(4,1,4,12);
+%play_note(5,1,6,15);
+%play_note(6,1,4,14);
+%play_note(7,1,6,14);
+%play_note(8,1,4,14);
 
 %A simple power chord to demonstrate chord, notice the order of the string
 %decides if downpicking or not
-%play_chord(1,[2,2,2],[1,2,3],[5,7,7]);
+play_chord(1,[2,2,2],[1,2,3],[5,7,7]);
 %play_note(3,1,1,-1);
 %play_note(4,1,1,-1);
 %play_note(4,1,1,-1);
@@ -420,7 +389,7 @@ for clock=1:clockmax
         elseif(TIMESTAMP(str,clock)<0)
             if(TIMESTAMP(str,clock)==-1)
                 release(str);
-                lastPluckT(str)=tmax+1;
+                lastPluckT(str)=t;
             elseif(TIMESTAMP(str,clock)<-10 && TIMESTAMP(str,clock)>-40)
                 play(str,0);
                 lastPluckT(str)=t;
@@ -431,7 +400,7 @@ for clock=1:clockmax
         H(str,j)=0;
         if(t>=lastPluckT(str))
             for n=1:10
-                H(str,j)=H(str,j)+(2*Hp*(L-L*fp(str)/J)^2*sin(xp*n*pi/(L-L*fp(str)/J)))/(xp*(L-L*fp(str)/J-xp)*n*n*pi*pi)*sin(n*j/J*pi)*cos(n*pi*(t-lastPluckT(str))*sqrt(T(str)/M)/(L-L*fp(str)/J));
+                H(str,j)=H(str,j)+(2*Hp(str)*(L-L*fp(str)/J)^2*sin(xp(str)*n*pi/(L-L*fp(str)/J)))/(xp(str)*(L-L*fp(str)/J-xp(str))*n*n*pi*pi)*sin(n*j/J*pi)*cos(n*pi*(t-lastPluckT(str))*sqrt(T(str)/M)/(L-L*fp(str)/J));
             end
             H(str,j)=H(str,j)*max([1-(t-lastPluckT(str))/tau,0])^2;
         end
