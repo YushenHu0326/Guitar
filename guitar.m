@@ -247,7 +247,7 @@ for ii=1:6
     T(ii)=M*(2*L*f(ii))^2;
 end
 
-tau=1.5; %decay time (seconds)
+tau=0.5; %decay time (seconds)
 %damping constant to make decay time tau:
 R=zeros(1,6);
 for ii=1:6
@@ -354,7 +354,7 @@ Hp=0.1;
 %play_hammeron(4,1,3,15);
 %play_bend(5,1,3,15,17);
 
-AH(1,1,6,12);
+AH(1,1,1,5);
 
 count=0;
 
@@ -402,9 +402,11 @@ for clock=1:clockmax
         V(str,j)=V(str,j)+(dt/dx^2)*(T(str)/M)*(H(str,j+1)-2*H(str,j)+H(str,j-1))+(dt/dx^2)*(R(str)/M)*(V(str,j+1)-2*V(str,j)+V(str,j-1));
         H(str,j)=H(str,j)+dt*V(str,j);
         if(t>=lastHarmonicT(str))
-            for n=1:3
-                H(str,j)=H(str,j)-(2*Hp*L*L*sin(xp*n*pi/L))/(xp*(L-xp)*n*n*pi*pi)*sin(n*j/J*pi)*cos(n*pi*(t-lastHarmonicT(str))*T(str)/L);
+            H(str,j)=0;
+            for n=1:10
+                H(str,j)=H(str,j)+(2*Hp*L*L*sin(xp*n*pi/L))/(xp*(L-xp)*n*n*pi*pi)*sin(n*j/J*pi)*cos(n*pi*(t-lastHarmonicT(str))*sqrt(T(str)/M)/L);
             end
+            H(str,j)=H(str,j)*max([1-(t-lastHarmonicT(str))/tau,0])^2;
         end
     end
     if(mod(clock,nskip)==0)
