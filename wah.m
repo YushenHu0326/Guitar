@@ -1,10 +1,10 @@
 function wah(audio)
     % Input: audio file
     [ audio_in, fs] = audioread(audio);
-    damping = input(0.05);
-    width = input(1000);
-    min_cutoff = input(250);
-    max_cutoff = input(5000);
+    damping = 0.05;
+    width = 1000;
+    min_cutoff = 250;
+    max_cutoff = 5000;
     center_freq = width/fs;
     cutoff_freq=min_cutoff:center_freq:max_cutoff;
     while(length(cutoff_freq) < length(audio_in) )
