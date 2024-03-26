@@ -362,7 +362,7 @@ end
 %play_bend(5,1,3,15,17);
 
 %AH(1,4,6,7);
-PH(1,2,3,4);
+PH(1,1,3,4);
 
 count=0;
 
@@ -420,7 +420,7 @@ for clock=1:clockmax
         H(str,j)=0;
         if(t>=lastPluckT(str))
             if(HARMONICP(str,clock)~=0)
-                incr=round(1/fret(HARMONICP(str,clock)));
+                incr=round(1/min([fret(HARMONICP(str,clock)),1-fret(HARMONICP(str,clock))]));
             else
                 incr=1;
             end
