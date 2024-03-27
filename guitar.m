@@ -275,12 +275,8 @@ STRINGT=zeros(6,clockmax);
 HARMONICP=zeros(6,clockmax);
 
 NOISE=zeros(1,clockmax);
-n_rand=rand;
 for ii=1:clockmax
-    NOISE(ii)=-(sin(ii/100*pi)*(n_rand+1))/5+1;
-    if(mod(ii,200)==0)
-        n_rand=rand;
-    end
+    NOISE(ii)=(rand-0.5)/100+1;
 end
 
 lastPluckT=zeros(1,6);
@@ -304,13 +300,13 @@ end
 
 %Part of the main riff of Sweet Child O'Mine to demonstrate single note
 play_note(1,16,3,12);
-%play_note(2,1,5,15);
-%play_note(3,1,4,14);
-%play_note(4,1,4,12);
-%play_note(5,1,6,15);
-%play_note(6,1,4,14);
-%play_note(7,1,6,14);
-%play_note(8,1,4,14);
+play_note(2,1,5,15);
+play_note(3,1,4,14);
+play_note(4,1,4,12);
+play_note(5,1,6,15);
+play_note(6,1,4,14);
+play_note(7,1,6,14);
+play_note(8,1,4,14);
 
 %A simple power chord to demonstrate chord, notice the order of the string
 %decides if downpicking or not
@@ -430,12 +426,13 @@ for clock=1:clockmax
     %drawnow %show latest frame
 end
 
-S=gdist(0.999,S);
+S=gdist(0.9995,S);
 
 soundsc(S(1:count))
 %plot the soundwave as a function of time:
 %figure
 plot(tsave(1:count),S(1,1:count))
 %plot(STRINGT(6,:))
+%plot(NOISE);
 
 end
