@@ -186,7 +186,7 @@ end
 function release(s)
     fp(s)=0;
     Hp(s)=0.0002;
-    tau(s)=1.5;
+    damp(s)=5;
 end
 
 BPM=120;
@@ -228,12 +228,15 @@ for ii=1:6
     T(ii)=M*(2*L*f(ii))^2;
 end
 
-tau=zeros(1,6); %decay time (seconds)
-for ii=1:6
-    tau(ii)=2;
-end
+tau=2; %decay time (seconds)
 %damping constant to make decay time tau:
-R=(2*M*L^2)/(tau(1)*pi^2);
+R=(2*M*L^2)/(tau*pi^2);
+
+%damping factor
+damp=zeros(1,6);
+for ii=1:6
+    damp(ii)=5;
+end
 
 J=81;
 dx=L/(J-1);
@@ -274,7 +277,7 @@ HARMONICP=zeros(6,clockmax);
 NOISE=zeros(1,clockmax);
 n_rand=rand;
 for ii=1:clockmax
-    NOISE(ii)=(sin(ii/4*pi)*(n_rand-0.5)/4)/4+1;
+    NOISE(ii)=(sin(ii/50*pi)*((n_rand-0.5)/2+1))/4+1;
     if(mod(ii,pi)==0)
         n_rand=rand;
     end
@@ -300,8 +303,8 @@ end
 %-1 denotes x on the tab
 
 %Part of the main riff of Sweet Child O'Mine to demonstrate single note
-play_note(1,1,3,12);
-play_note(2,1,5,15);
+%play_note(1,1,3,12);
+%play_note(2,1,5,15);
 %play_note(3,1,4,14);
 %play_note(4,1,4,12);
 %play_note(5,1,6,15);
@@ -327,7 +330,8 @@ play_note(2,1,5,15);
 %bend(1,1,5,15,17);
 
 %play_tremolo(1,1,6,12);
-%play_vibrato(1,1,6,12);
+%play_note(1,1,6,12);
+%vibrato(1,1,6,12);
 
 %A simple blue phrase to demonstrate hammer on and pull off
 %play_note(1,1,3,12);
@@ -374,17 +378,17 @@ for clock=1:clockmax
             elseif(TIMESTAMP(str,clock)>30 && TIMESTAMP(str,clock)<55)
                 play(str,TIMESTAMP(str,clock)-30);
                 lastPluckT(str)=t;
-                tau(str)=0.5;
+                damp(str)=20;
             %Play right palm mute on open note
             elseif(TIMESTAMP(str,clock)==55)
                 play(str,0);
                 lastPluckT(str)=t;
-                tau(str)=0.5;
+                damp(str)=20;
             %Play left palm mute
             elseif(TIMESTAMP(str,clock)==59)
                 play(str,0);
                 lastPluckT(str)=t;
-                tau(str)=0.1;
+                damp(str)=50;
             elseif(TIMESTAMP(str,clock)>59 && TIMESTAMP(str,clock)<85)
                 hammeron(str,TIMESTAMP(str,clock)-60);
                 lastPluckT(str)=t;
@@ -417,7 +421,7 @@ for clock=1:clockmax
             for n=1:5
                 H(str,j)=H(str,j)+(2*Hp(str)*(L-L*fp(str)/J)^2*sin(xp(str)*n*incr*pi/(L-L*fp(str)/J)))/(xp(str)*(L-L*fp(str)/J-xp(str))*n*incr*n*incr*pi*pi)*sin(n*incr*j/J*pi)*cos(n*incr*pi*(t-lastPluckT(str))*sqrt(T(str)/M)/(L-L*fp(str)/J));
             end
-            H(str,j)=H(str,j)*max([1-(t-lastPluckT(str))/tau(str),0])^5;
+            H(str,j)=H(str,j)/(damp(str)*(t-lastPluckT(str))+1);
             H(str,j)=H(str,j)*NOISE(clock);
         end
     end
