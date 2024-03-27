@@ -9,8 +9,8 @@
 % CHORD -check
 % PALM MUTE -check
 % HAMMER ON & PULL OFF
-% AH
-% PH
+% AH -check
+% PH -check
 % STOCHASTIC PROCESS
 % HUMBUCKER PICKUP
 
@@ -320,14 +320,14 @@ end
 %-1 denotes x on the tab
 
 %Part of the main riff of Sweet Child O'Mine to demonstrate single note
-%play_note(1,1,3,12);
-%play_note(2,1,5,15);
-%play_note(3,1,4,14);
-%play_note(4,1,4,12);
-%play_note(5,1,6,15);
-%play_note(6,1,4,14);
-%play_note(7,1,6,14);
-%play_note(8,1,4,14);
+play_note(1,1,3,12);
+play_note(2,1,5,15);
+play_note(3,1,4,14);
+play_note(4,1,4,12);
+play_note(5,1,6,15);
+play_note(6,1,4,14);
+play_note(7,1,6,14);
+play_note(8,1,4,14);
 
 %A simple power chord to demonstrate chord, notice the order of the string
 %decides if downpicking or not
@@ -359,6 +359,7 @@ end
 
 %AH(1,4,6,7);
 %PH(1,1,3,4);
+%bend(1,1,3,4,6);
 
 count=0;
 
@@ -420,10 +421,10 @@ for clock=1:clockmax
             else
                 incr=1;
             end
-            for n=1:10
+            for n=1:5
                 H(str,j)=H(str,j)+(2*Hp(str)*(L-L*fp(str)/J)^2*sin(xp(str)*n*incr*pi/(L-L*fp(str)/J)))/(xp(str)*(L-L*fp(str)/J-xp(str))*n*incr*n*incr*pi*pi)*sin(n*incr*j/J*pi)*cos(n*incr*pi*(t-lastPluckT(str))*sqrt(T(str)/M)/(L-L*fp(str)/J));
             end
-            H(str,j)=H(str,j)*max([1-(t-lastPluckT(str))/tau(str),0])^2;
+            H(str,j)=H(str,j)*max([1-(t-lastPluckT(str))/tau(str),0])^3;
         end
     end
     if(mod(clock,nskip)==0)
@@ -440,7 +441,7 @@ for clock=1:clockmax
     %drawnow %show latest frame
 end
 
-S=gdist(0.99,S);
+%S=gdist(0.99,S);
 
 soundsc(S(1:count))
 %plot the soundwave as a function of time:
