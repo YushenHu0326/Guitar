@@ -192,10 +192,10 @@ end
 BPM=120;
 
 %Initialize pickup position
-pickup = 0.81;
-pickup_2 = 0.82;
+pickup = 0.76;
+pickup_2 = 0.765;
 pickup_3 = 0.95;
-pickpos = 0.85;
+pickpos = 0.77;
 
 %frequencies for all 6 strings
 f=[82,110,147,196,247,330];
@@ -271,6 +271,15 @@ STRINGT=zeros(6,clockmax);
 % When not 0, slightly touch the string to make harmonics
 HARMONICP=zeros(6,clockmax);
 
+NOISE=zeros(1,clockmax);
+n_rand=rand;
+for ii=1:clockmax
+    NOISE(ii)=(sin(ii/4*pi)*(n_rand-0.5)/4)/4+1;
+    if(mod(ii,pi)==0)
+        n_rand=rand;
+    end
+end
+
 lastPluckT=zeros(1,6);
 for ii=1:6
     lastPluckT(ii)=tmax+1;
@@ -293,12 +302,12 @@ end
 %Part of the main riff of Sweet Child O'Mine to demonstrate single note
 play_note(1,1,3,12);
 play_note(2,1,5,15);
-play_note(3,1,4,14);
-play_note(4,1,4,12);
-play_note(5,1,6,15);
-play_note(6,1,4,14);
-play_note(7,1,6,14);
-play_note(8,1,4,14);
+%play_note(3,1,4,14);
+%play_note(4,1,4,12);
+%play_note(5,1,6,15);
+%play_note(6,1,4,14);
+%play_note(7,1,6,14);
+%play_note(8,1,4,14);
 
 %A simple power chord to demonstrate chord, notice the order of the string
 %decides if downpicking or not
@@ -346,7 +355,7 @@ for clock=1:clockmax
             S(count)=sum(H(:,ceil(J*pickup))-H0(:,ceil(J*pickup))); %sample the sound
             S(count)=S(count)+sum(H(:,ceil(J*pickup_2))-H0(:,ceil(J*pickup_2))); %sample the sound
         else
-            S(count)=sum(H(:,ceil(J*pickup_3))-H(:,ceil(J*pickup_3)));
+            S(count)=sum(H(:,ceil(J*pickup_3))-H0(:,ceil(J*pickup_3)));
         end
         tsave(count)=t; %record sample time
     end
@@ -408,7 +417,8 @@ for clock=1:clockmax
             for n=1:5
                 H(str,j)=H(str,j)+(2*Hp(str)*(L-L*fp(str)/J)^2*sin(xp(str)*n*incr*pi/(L-L*fp(str)/J)))/(xp(str)*(L-L*fp(str)/J-xp(str))*n*incr*n*incr*pi*pi)*sin(n*incr*j/J*pi)*cos(n*incr*pi*(t-lastPluckT(str))*sqrt(T(str)/M)/(L-L*fp(str)/J));
             end
-            H(str,j)=H(str,j)*max([1-(t-lastPluckT(str))/tau(str),0])^3;
+            H(str,j)=H(str,j)*max([1-(t-lastPluckT(str))/tau(str),0])^5;
+            H(str,j)=H(str,j)*NOISE(clock);
         end
     end
     
@@ -416,7 +426,7 @@ for clock=1:clockmax
     %drawnow %show latest frame
 end
 
-%S=gdist(0.99,S);
+S=gdist(0.999,S);
 
 soundsc(S(1:count))
 %plot the soundwave as a function of time:
