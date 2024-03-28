@@ -42,6 +42,16 @@ function play_slide(t,duration,s,f,f0)
         TIMESTAMP(s,ceil(t/2*(60/BPM)/dt))=f;
         TIMESTAMP(s,ceil((t+duration)/2*60/BPM/dt)-2)=-1;
         for i=ceil(t/2*(60/BPM)/dt):ceil((t+duration)/2*(60/BPM)/dt)
+            fp(s,i)=ceil(fret(ceil(f+(f0-f)*i/(ceil((t+duration)/2*(60/BPM)/dt)-ceil(t/2*(60/BPM)/dt))))*J);
+        end
+    end
+end
+
+function play_bottle_slide(t,duration,s,f,f0)
+    if(f>0 && f<25)
+        TIMESTAMP(s,ceil(t/2*(60/BPM)/dt))=f;
+        TIMESTAMP(s,ceil((t+duration)/2*60/BPM/dt)-2)=-1;
+        for i=ceil(t/2*(60/BPM)/dt):ceil((t+duration)/2*(60/BPM)/dt)
             fp(s,i)=ceil((fret(f)+(fret(f0)-fret(f))*i/(ceil((t+duration)/2*(60/BPM)/dt)-ceil(t/2*(60/BPM)/dt)))*J);
         end
     end
@@ -336,6 +346,8 @@ end
 %play_note(6,1,4,14);
 %play_note(7,1,6,14);
 %play_note(8,1,4,14);
+
+play_slide(1,1,5,12,15);
 
 %A simple power chord to demonstrate chord, notice the order of the string
 %decides if downpicking or not
