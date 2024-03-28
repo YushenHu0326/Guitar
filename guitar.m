@@ -25,12 +25,25 @@ function play_note(t,duration,s,f)
     if(f>0 && f<25)
         TIMESTAMP(s,ceil(t/2*(60/BPM)/dt))=f;
         TIMESTAMP(s,ceil((t+duration)/2*60/BPM/dt)-2)=-1;
+        for i=ceil(t/2*(60/BPM)/dt):ceil((t+duration)/2*(60/BPM)/dt)
+            fp(s,i)=ceil(fret(f)*J);
+        end
     elseif(f==0)
         TIMESTAMP(s,ceil(t/2*(60/BPM)/dt))=25;
         TIMESTAMP(s,ceil((t+duration)/2*60/BPM/dt)-2)=-1;
     elseif(f==-1)
         TIMESTAMP(s,ceil(t/2*(60/BPM)/dt))=59;
         TIMESTAMP(s,ceil((t+duration)/2*60/BPM/dt)-2)=-1;
+    end
+end
+
+function play_slide(t,duration,s,f,f0)
+    if(f>0 && f<25)
+        TIMESTAMP(s,ceil(t/2*(60/BPM)/dt))=f;
+        TIMESTAMP(s,ceil((t+duration)/2*60/BPM/dt)-2)=-1;
+        for i=ceil(t/2*(60/BPM)/dt):ceil((t+duration)/2*(60/BPM)/dt)
+            fp(s,i)=ceil((fret(f)+(fret(f0)-fret(f))*i/(ceil((t+duration)/2*(60/BPM)/dt)-ceil(t/2*(60/BPM)/dt)))*J);
+        end
     end
 end
 
@@ -41,6 +54,9 @@ function play_tremolo(t,duration,s,f)
         TIMESTAMP(s,ceil((t+duration*0.5)/2*(60/BPM)/dt))=f;
         TIMESTAMP(s,ceil((t+duration*0.75)/2*(60/BPM)/dt))=f;
         TIMESTAMP(s,ceil((t+duration)/2*60/BPM/dt)-2)=-1;
+        for i=ceil(t/2*(60/BPM)/dt):ceil((t+duration)/2*(60/BPM)/dt)
+            fp(s,i)=ceil(fret(f)*J);
+        end
     elseif(f==0)
         TIMESTAMP(s,ceil(t/2*(60/BPM)/dt))=25;
         TIMESTAMP(s,ceil((t+duration*0.25)/2*(60/BPM)/dt))=25;
@@ -63,6 +79,9 @@ function play_chord(t,duration,s,f)
             TIMESTAMP(s(i),ceil(t/2*(60/BPM)/dt)+interval)=f(i);
             TIMESTAMP(s(i),ceil((t+duration(i))/2*(60/BPM)/dt)-2)=-1;
             interval=interval+1;
+            for iii=ceil(t/2*(60/BPM)/dt):ceil((t+duration(i))/2*(60/BPM)/dt)
+                fp(s(i),iii)=ceil(fret(f(i))*J);
+            end
         elseif(f(i)==-1)
             TIMESTAMP(s(i),ceil(t/2*(60/BPM)/dt)+interval)=59;
             TIMESTAMP(s(i),ceil((t+duration(i))/2*(60/BPM)/dt)-2)=-1;
@@ -75,6 +94,9 @@ function right_palm_mute(t,duration,s,f)
     if(f>0 && f<25)
         TIMESTAMP(s,ceil(t/2*(60/BPM)/dt))=f+30;
         TIMESTAMP(s,ceil((t+duration)/2*60/BPM/dt)-2)=-1;
+        for i=ceil(t/2*(60/BPM)/dt):ceil((t+duration)/2*(60/BPM)/dt)
+            fp(s,i)=ceil(fret(f)*J);
+        end
     elseif(f==0)
         TIMESTAMP(s,ceil(t/2*(60/BPM)/dt))=55;
         TIMESTAMP(s,ceil((t+duration)/2*60/BPM/dt)-2)=-1;
@@ -118,6 +140,9 @@ function play_hammeron(t,duration,s,f)
     if(f>0 && f<25)
         TIMESTAMP(s,ceil(t/2*(60/BPM)/dt))=f+60;
         TIMESTAMP(s,ceil((t+duration)/2*60/BPM/dt)-2)=-1;
+        for i=ceil(t/2*(60/BPM)/dt):ceil((t+duration)/2*(60/BPM)/dt)
+            fp(s,i)=ceil(fret(f)*J);
+        end
     end
 end
 
@@ -125,6 +150,9 @@ function play_pulloff(t,duration,s,f)
     if(f>0 && f<25)
         TIMESTAMP(s,ceil(t/2*(60/BPM)/dt))=f+90;
         TIMESTAMP(s,ceil((t+duration)/2*60/BPM/dt)-2)=-1;
+        for i=ceil(t/2*(60/BPM)/dt):ceil((t+duration)/2*(60/BPM)/dt)
+            fp(s,i)=ceil(fret(f)*J);
+        end
     elseif(f==0)
         TIMESTAMP(s,ceil(t/2*(60/BPM)/dt))=115;
         TIMESTAMP(s,ceil((t+duration)/2*60/BPM/dt)-2)=-1;
@@ -147,16 +175,17 @@ function PH(t,duration,s,f)
         TIMESTAMP(s,ceil((t+duration)/2*60/BPM/dt)-2)=-1;
         for i=ceil(t/2*(60/BPM)/dt):ceil((t+duration)/2*(60/BPM)/dt)
             HARMONICP(s,i)=25;
+            fp(s,i)=ceil(fret(f)*J);
         end
     end
 end
 
 function play(s,f)
-    if(f==0)
-        fp(s)=0;
-    else
-        fp(s)=ceil(fret(f)*J);
-    end
+    %if(f==0)
+    %    fp(s)=0;
+    %else
+    %    fp(s)=ceil(fret(f)*J);
+    %end
     fp0(s)=f;
     %initial conditions for plucked string:
     xp(s)=L*pickpos;
@@ -164,7 +193,7 @@ function play(s,f)
 end
 
 function hammeron(s,f)
-    fp(s)=ceil(fret(f)*J);
+    %fp(s)=ceil(fret(f)*J);
     fp0(s)=f;
     %initial conditions for plucked string:
     xp(s)=L*fret(f);
@@ -172,11 +201,11 @@ function hammeron(s,f)
 end
 
 function pulloff(s,f,f0)
-    if(f==0)
-        fp(s)=0;
-    else
-        fp(s)=ceil(fret(f)*J);
-    end
+    %if(f==0)
+    %    fp(s)=0;
+    %else
+    %    fp(s)=ceil(fret(f)*J);
+    %end
     fp0(s)=f;
     %initial conditions for plucked string:
     xp(s)=L*fret(f0);
@@ -184,7 +213,6 @@ function pulloff(s,f,f0)
 end
 
 function release(s)
-    fp(s)=0;
     Hp(s)=0.0002;
     damp(s)=20;
 end
@@ -216,9 +244,6 @@ fret(19)=0.66629012345;  fret(20)=0.68502006172;
 fret(21)=0.70269753086;  fret(22)=0.71938425925;
 fret(23)=0.73513425925;  fret(24)=0.75;
 fret(25)=pickpos;
-%Currently pressed fret
-fp=zeros(1,6);
-fp0=zeros(1,6);
 
 %string parameters to make frequency f1:
 L=100;
@@ -279,6 +304,10 @@ for ii=1:clockmax
     NOISE(ii)=(rand-0.5)/100+1;
 end
 
+%Currently pressed fret
+fp=zeros(6,clockmax);
+fp0=zeros(1,6);
+
 lastPluckT=zeros(1,6);
 for ii=1:6
     lastPluckT(ii)=tmax+1;
@@ -299,14 +328,14 @@ end
 %-1 denotes x on the tab
 
 %Part of the main riff of Sweet Child O'Mine to demonstrate single note
-play_note(1,16,3,12);
-play_note(2,1,5,15);
-play_note(3,1,4,14);
-play_note(4,1,4,12);
-play_note(5,1,6,15);
-play_note(6,1,4,14);
-play_note(7,1,6,14);
-play_note(8,1,4,14);
+%play_note(1,16,3,12);
+%play_note(2,1,5,15);
+%play_note(3,1,4,14);
+%play_note(4,1,4,12);
+%play_note(5,1,6,15);
+%play_note(6,1,4,14);
+%play_note(7,1,6,14);
+%play_note(8,1,4,14);
 
 %A simple power chord to demonstrate chord, notice the order of the string
 %decides if downpicking or not
@@ -405,7 +434,7 @@ for clock=1:clockmax
             end
         end
         T(str)=M*(2*L*(f_init(str)+STRINGT(str,clock)))^2;
-        j=fp(str)+2:(J-1); % list of indices of interior points
+        j=fp(str,clock)+2:(J-1); % list of indices of interior points
         H0(str,j)=H(str,j);
         H(str,j)=0;
         if(t>=lastPluckT(str))
@@ -415,7 +444,7 @@ for clock=1:clockmax
                 incr=1;
             end
             for n=1:5
-                H(str,j)=H(str,j)+(2*Hp(str)*(L-L*fp(str)/J)^2*sin(xp(str)*n*incr*pi/(L-L*fp(str)/J)))/(xp(str)*(L-L*fp(str)/J-xp(str))*n*incr*n*incr*pi*pi)*sin(n*incr*j/J*pi)*cos(n*incr*pi*(t-lastPluckT(str))*sqrt(T(str)/M)/(L-L*fp(str)/J));
+                H(str,j)=H(str,j)+(2*Hp(str)*(L-L*fp(str,clock)/J)^2*sin(xp(str)*n*incr*pi/(L-L*fp(str)/J)))/(xp(str)*(L-L*fp(str,clock)/J-xp(str))*n*incr*n*incr*pi*pi)*sin(n*incr*j/J*pi)*cos(n*incr*pi*(t-lastPluckT(str))*sqrt(T(str)/M)/(L-L*fp(str,clock)/J));
             end
             H(str,j)=H(str,j)/(damp(str)*(t-lastPluckT(str))+1);
             H(str,j)=H(str,j)*NOISE(clock);
