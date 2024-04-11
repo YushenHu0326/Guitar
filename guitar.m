@@ -42,7 +42,12 @@ function play_slide(t,duration,s,f,f0)
         TIMESTAMP(s,ceil(t/2*(60/BPM)/dt))=f;
         TIMESTAMP(s,ceil((t+duration)/2*60/BPM/dt)-2)=-1;
         for i=ceil(t/2*(60/BPM)/dt):ceil((t+duration)/2*(60/BPM)/dt)
-            fp(s,i)=ceil(fret(ceil(f+(f0-f)*i/(ceil((t+duration)/2*(60/BPM)/dt)-ceil(t/2*(60/BPM)/dt))))*J);
+            current_df=(i-ceil(t/2*(60/BPM)/dt))/(ceil((t+duration)/2*(60/BPM)/dt)-ceil(t/2*(60/BPM)/dt))*2;
+            if current_df>1
+                current_df=1;
+            end
+            current_f=floor(f+current_df*(f0-f));
+            fp(s,i)=ceil(fret(current_f)*J);
         end
     end
 end
@@ -227,7 +232,7 @@ function release(s)
     damp(s)=20;
 end
 
-BPM=120;
+BPM=126;
 
 %Initialize pickup position
 pickup = 0.76;
@@ -290,7 +295,7 @@ end
 %Also, make nskip as small as possible, given the above criteria.
 nskip=ceil(1/(8192*dtmax));
 dt=1/(8192*nskip);
-tmax=3; %total time of the simulation in seconds
+tmax=39; %total time of the simulation in seconds
 clockmax=ceil(tmax/dt);
 
 % Action on Timstamp:
@@ -347,7 +352,22 @@ end
 %play_note(7,1,6,14);
 %play_note(8,1,4,14);
 
-play_slide(1,1,5,12,15);
+%play_note(1,1,1,2);
+%play_note(2,1,1,2);
+%play_note(3,1,2,4);
+%play_note(4,1,1,2);
+%play_note(5,1,2,5);
+%play_note(6,1,1,2);
+%play_note(7,1,2,4);
+%play_note(8,1,1,2);
+%play_note(9,1,2,2);
+%play_note(10,1,1,5);
+%play_note(11,1,1,4);
+%play_note(12,1,1,5);
+%play_note(13,1,2,2);
+%play_note(14,1,1,5);
+%play_note(15,1,1,4);
+%play_note(16,1,1,0);
 
 %A simple power chord to demonstrate chord, notice the order of the string
 %decides if downpicking or not
@@ -381,7 +401,6 @@ play_slide(1,1,5,12,15);
 %AH(1,4,6,7);
 %PH(1,1,3,4);
 %bend(1,1,3,4,6);
-
 
 play_note(3.5,0.5,4,-1);
 play_note(4,0.25,4,-1);
@@ -512,7 +531,6 @@ play_chord(83,[0.5,0.5],[1,2],[-1,-1]);
 play_chord(83.5,[0.5,0.5],[1,2],[-1,-1]);
 %%%
 play_note(84,2,4,12);
-bend(84,2,4,12,14);
 play_note(86,0.5,3,14);
 play_pulloff(86.5,0.5,3,12);
 play_note(87,2,3,14);
@@ -524,7 +542,6 @@ play_pulloff(91,0.5,4,12);
 play_note(91.5,0.5,3,14);
 %%%
 play_note(92,2,4,12);
-bend(92,2,4,12,14);
 play_note(94,0.5,3,14);
 play_pulloff(94.5,0.5,3,12);
 play_note(95,2,3,14);
@@ -566,6 +583,77 @@ play_note(112.5,0.25,6,12);
 play_hammeron(112.75,0.25,6,15);
 play_pulloff(113,0.5,6,12);
 play_note(113.5,0.5,5,15);
+%%%
+play_note(114,0.5,5,15);
+bend(114,0.5,5,15,17);
+play_note(114.5,0.5,6,12);
+play_note(115,0.5,5,15);
+play_pulloff(115.5,0.5,5,12);
+play_note(116,0.5,4,14);
+bend(116,0.5,4,14,16);
+play_note(116.5,0.5,6,12);
+play_note(117,0.5,5,15);
+play_pulloff(117.5,0.5,5,12);
+play_note(118,0.5,5,15);
+bend(118,0.5,5,15,17);
+play_note(118.5,0.5,6,12);
+play_note(119,0.5,5,15);
+play_pulloff(119.5,0.5,5,12);
+play_note(120,0.5,4,14);
+bend(120,0.5,4,14,16);
+play_note(120.5,0.5,6,12);
+play_note(121,0.5,5,15);
+play_pulloff(121.5,0.5,5,12);
+%%%
+play_note(122,0.5,5,15);
+bend(122,0.5,5,15,17);
+play_note(122.5,0.5,6,12);
+play_note(123,0.5,5,15);
+play_pulloff(123.5,0.5,5,12);
+play_note(124,0.5,4,14);
+bend(124,0.5,4,14,16);
+play_note(124.5,0.5,6,12);
+play_note(125,0.5,5,15);
+play_pulloff(125.5,0.5,5,12);
+play_note(126,0.5,5,15);
+bend(126,0.5,5,15,17);
+play_note(126.5,0.5,6,12);
+play_note(127,0.5,5,15);
+play_pulloff(127.5,0.5,5,12);
+play_note(128,0.5,4,14);
+bend(128,0.5,4,14,16);
+play_note(128.5,0.5,6,12);
+play_note(129,0.5,5,15);
+play_pulloff(129.5,0.5,5,12);
+%%%
+play_note(130,4,6,15);
+bend(130,4,6,15,17);
+play_note(134,1.5,6,15);
+play_note(135.5,0.5,6,12);
+play_hammeron(136,0.5,6,15);
+play_pulloff(136.5,0.5,6,12);
+play_note(137,0.5,5,15);
+play_note(137.5,0.5,6,12);
+%%%
+play_note(138,0.5,5,15);
+bend(138,0.5,5,15,17);
+play_note(139.5,0.5,6,12);
+play_note(140,0.5,5,15);
+play_pulloff(140.5,0.5,5,12);
+play_note(141,0.5,4,14);
+bend(141,0.5,4,14,16);
+play_note(141.5,0.5,4,12);
+play_note(142,1,4,14);
+bend(142,1,4,14,16);
+play_note(143,0.5,5,15);
+play_note(143.5,1,4,14);
+bend(143.5,1,4,14,16);
+play_note(144.5,0.5,4,12);
+play_note(145,0.5,3,14);
+play_note(145.5,0.5,4,14);
+play_pulloff(146,0.5,4,12);
+play_note(146.5,1.5,3,14);
+play_slide(148,4,4,12,2);
 
 count=0;
 
@@ -652,47 +740,9 @@ for clock=1:clockmax
     %drawnow %show latest frame
 end
 
-function wah(audio_in, fs)
-    % Input: audio file
-    damping = 0.06; %The lower it is, the smaller pass band
-    width = 500;
-    min_cutoff = 500; % Minimum cut off frequency 
-    max_cutoff = 3000;% Maximum cut off frequency
-    center_freq = width/fs;
-    cutoff_freq=min_cutoff:center_freq:max_cutoff;
-    while(length(cutoff_freq) < length(audio_in) )
-        cutoff_freq = [ cutoff_freq (max_cutoff:-center_freq:min_cutoff) ];
-        cutoff_freq = [ cutoff_freq (min_cutoff:center_freq:max_cutoff) ];
-    end
-    cutoff_freq = cutoff_freq(1:length(audio_in));
-    % control the center frequency
-    F1 = 2*sin((pi*cutoff_freq(1))/fs);
-    Q1 = 2*damping;
-    % Create and Zero Vectors to Match Length of Audio Input File
-    highpass=zeros(size(audio_in));
-    bandpass=zeros(size(audio_in));
-    lowpass=zeros(size(audio_in));
-    highpass(1) = audio_in(1);
-    bandpass(1) = F1*highpass(1);
-    lowpass(1) = F1*bandpass(1);
-    for n=2:length(audio_in)
-        highpass(n) = audio_in(n) - lowpass(n-1) - Q1*bandpass(n-1);
-        bandpass(n) = F1*highpass(n) + bandpass(n-1);
-        lowpass(n) = F1*bandpass(n) + lowpass(n-1);
-        F1 = 2*sin((pi*cutoff_freq(n))/fs);
-    end
-    % Normalize and play back
-    normed = bandpass./max(max(abs(bandpass)));
-    audiowrite('wah wahed.wav', normed, fs);
-    sound(normed, fs);
-end
-
 S=gdist(0.9995,S);
 
-%soundsc(S(1:count))
-
-wah(S(1:count),8192)
-
+soundsc(S(1:count))
 %plot the soundwave as a function of time:
 %figure
 plot(tsave(1:count),S(1,1:count))
